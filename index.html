@@ -244,26 +244,29 @@
             return data.candidates[0].content.parts[0].text;
         }
 
+       // GANTI FUNGSI cariModelOtomatis DENGAN INI:
+        
         async function cariModelOtomatis() {
             try {
+                // Kita panggil daftar model
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
                 const d = await r.json();
-                const m = d.models?.filter(x => x.supportedGenerationMethods.includes("generateContent"));
-                if(m && m.length > 0) ACTIVE_MODEL = m[0].name;
-            } catch(e){}
-        }
-
-        // --- UTILS ---
-        function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
-        
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const cleanText = text.replace(/[*#]/g, '');
-            const u = new SpeechSynthesisUtterance(cleanText);
-            u.lang = 'id-ID'; u.rate = 1.0; 
-            u.onstart = () => setState('speaking');
-            u.onend = () => setState('idle');
-            window.speechSynthesis.speak(u);
+                
+                // STRATEGI BARU: Cari yang namanya ada "flash" (Kuota Paling Gede)
+                const modelFlash = d.models?.find(m => m.name.includes("gemini-1.5-flash"));
+                
+                if (modelFlash) {
+                    ACTIVE_MODEL = modelFlash.name;
+                    console.log("Model Terpilih (High Speed): " + ACTIVE_MODEL);
+                } else {
+                    // Kalau gak nemu Flash, baru ambil sembarang (Fallback)
+                    const m = d.models?.filter(x => x.supportedGenerationMethods.includes("generateContent"));
+                    if(m && m.length > 0) ACTIVE_MODEL = m[0].name;
+                }
+            } catch(e){ 
+                // Kalau error pencarian, paksa tembak model standar
+                ACTIVE_MODEL = "gemini-1.5-flash"; 
+            }
         }
 
         function generateQRCode() {
