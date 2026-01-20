@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ AI Kiosk (Stabil)</title>
+    <title>SiGenZ AI Kiosk (PRO)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,10 +12,12 @@
     
     <style>
         body { background-color: #020202; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; }
+        /* WAJAH ROBOT */
         .face-container { width: 320px; height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 50px; transition: 0.3s; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3)); }
         .eyes-row { display: flex; gap: 70px; }
         .eye { width: 90px; height: 25px; background: #0ff; box-shadow: 0 0 25px #0ff; border-radius: 4px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .mouth { width: 120px; height: 3px; background: #0ff; box-shadow: 0 0 15px #0ff; opacity: 0.6; border-radius: 10px; }
+        /* ANIMASI */
         .state-idle .eye { animation: blink 4s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
         .state-thinking .eye { background: #fbbf24; box-shadow: 0 0 30px #fbbf24; width: 40px; height: 40px; border-radius: 50%; animation: spin 1s infinite linear; }
@@ -83,33 +85,131 @@
             <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> KONFIGURASI</h2>
             <p class="text-xs text-gray-400 mb-4">Masukkan API Key Gemini.</p>
             <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="AIzaSy...">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN</button>
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN & RESET</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // --- DATABASE PENGETAHUAN ---
+        // =================================================================
+        // 🧠 DATABASE PENGETAHUAN (EDIT DI SINI)
+        // =================================================================
         const DATABASE_SEKOLAH = `
-        INFORMASI UTAMA:
-        - Nama AI: SiGenZ.
-        - Pencipta: Mas Adi (Asmaul Riyadi) - Staff TU SMAN 1 Pejagoan.
-        - Fungsi: Asisten Informasi Sekolah.
+        Identitas:
+        - Nama: SiGenZ (Sistem Generasi Z).
+        - Lokasi: SMAN 1 Pejagoan, Kebumen.
+        - Pencipta: Mas Adi (Asmaul Riyadi) - Staff TU Visioner.
         
-        TIPS MENJAWAB:
-        - Jawab singkat (Max 2 kalimat).
-        - Gunakan bahasa sopan.
+        Informasi Sekolah:
+        - Kepala Sekolah: Erna Ummu Nurlaela
+        - Jam Kerja: 07.00 - 16.00 WIB.
+        - Fasilitas: Masjid, Lab, Perpus, Kantin, Parkir .
+        - ada 1065 siswa guru dan kayyawan sekitar 72 
+        - nama nama guru dan karyawan
+          Erna Umu Nurlaela, S.Pd, M.Eng
+Muji Rahayu, S.Pd.
+Ida Astuti, S.Pd.
+Drs. Sutriyanto.
+Dra. Indah Rahmawati.
+Drs. Doso Sucipto.
+Sri Raharjo, S.Pd.
+Gularso, S.Pd, M.Pd.
+Wiwi Sugiarti, S.Pd.
+Dra. Rini Widyaningsih.
+Drs. Rokhmat Supriyadi.
+Siti Rochamah, S.Pd.
+Titi Nurhadiyatun, S.Pd.
+Bayu Damar Nusantara, S.Pd
+Afri Lismaya Sinta Maheswari, S.Pd
+Endah Tri Rachmani, S.Sos.
+Mustikasari, S.Pd.
+Asih Parwiyatni, S.Pd.
+Wahyono, S.Pd
+Irfangi, S.Pd.
+Elin Marlina, S.Pd.
+Herdana Dwi Gahara, S. Pd. 
+Khusnul Khotimah, S.Pd, M.Si
+Rini Rachmawati, SE
+Sri Sunarsih, S.Pd.
+Nurul Azizah , S.Pd
+Heny Puryanto, S.Sos.
+Teguh Widodo
+Adi Hartono
+Agus Aji Suprihantoro
+Susiyanti
+Nur Wakhidin, S.M.
+Kabul Haryadi
+Tusiran
+Dra. Hj. Siti Muslikhatun.
+Sulastri, S.Pd.,M.M
+Slamet Edhi Sudrajat, S.Sn.
+Sulfan Hadi Mutakin, S.Pd.
+Nurhidayah Susilowati, S.Pd.
+Ngadnan, S.Pd
+Heri Pamuji, S.Pd
+Winda Agus Setyarini, S.Pd.
+Dina Dyah Agustina, S.Pd.
+Agung Kurniawan, S.TP.
+Muhammad Topix Hidayat, S.Tr.Kom
+Puas Romadloni, S.Pd
+Fitri Nugroho Suryadi, S.Pd
+Nur Ika Aristin, S.Pd.
+Erna Setyowati, S.Pd
+Iwan Syarifudin, S.Pd.
+Bangkit Nazhar, S.Pd.
+Tri Fatmawati, S.Pd.I.,M.Pd.I
+Betri Ngestiana, S.Pd.
+Nurul Sulistiyo Pribadi, S.Pd.
+Priyanto, S.Pd.Si
+Bodro Danang Ismanto,S.Pd.Gr.
+Siti Zulaikhah, S.Pd
+Fitri Rahmaliyah, S.Pd.
+Agus Salim Purwanto, S.Si, M.Pd
+Sunariyah, S.Pd.
+Dewi Santianingsih, S.Pd.
+Asmaul Riyadi, S.Kom.
+Khabib Marzuki, SE.
+Anjar Susilo, SE.
+Achmad Arif Mustaqim, S.I.Pust.
+Dewi Solikhati
+Pujo Riyadi
+Yasir Abdulah.
+Choderi
+Supriyadi
+Fitrianto Setiya Widodo
+Suhendri
+Akhmad Mulkan Fauzi, S.Pd
+
+Ade Gautama
+Wijang Pulung Baskoro Aji, S.Pd.
+Novi Yuniati, S.Pd.
+Suyanto, S.S.Pd
+Nanang Jatmiko, S.Pd
+Zakari Ulinuha, S.Sos.I, M.Pd
+Uli Fauziah Miatin, S.Pd, M.Pd
+Ita Riyatiningsih, S.Pd
+Uli Fauziah Miatin, S.Pd, M.Pd
+Feby Wahyu Harumi, S.Pd
+Khumaedi Masduqi, S.Pd.I
+Syifa Nurmala S.Pd
+Erwanda Dharmawan, S.Pd.
+        
+        Gaya Bicara:
+        - sopan boleh yang lucu.
+        - Sopan tapi santai.
+        - Gunakan Bahasa Indonesia.
         `;
+        // =================================================================
 
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_sman1pejagoan_stabil_v8"; 
+        const KIOSK_ID = "sigenz_sman1pejagoan_pro_v8"; 
         
         let API_KEY = localStorage.getItem("my_ai_key") || "";
-        
-        // KITA PAKSA PAKAI MODEL FLASH BIAR NGEBUT & IRIT
-        const ACTIVE_MODEL = "gemini-1.5-flash"; 
+
+        // KITA GUNAKAN MODEL 'PRO' (YANG PALING STABIL)
+        const ACTIVE_MODEL = "gemini-pro"; 
 
         let client;
         const urlParams = new URLSearchParams(window.location.search);
@@ -126,7 +226,7 @@
                 
                 initMqttKiosk();
                 generateQRCode();
-                document.body.addEventListener('click', () => { speak("Siap."); }, {once:true});
+                document.body.addEventListener('click', () => { speak("SiGenZ Siap."); }, {once:true});
             }
         };
 
@@ -162,30 +262,22 @@
             const msg = message.payloadString;
             const output = document.getElementById('response-text');
             
-            // Tampilkan Pesan User
             output.innerText = '"' + msg + '"';
             output.classList.add('italic', 'text-yellow-300');
             setState('thinking');
 
             try {
-                // Tanya Gemini
                 const aiReply = await tanyaGemini(msg);
                 
-                // Tampilkan Jawaban
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
                 output.classList.add('text-cyan-100');
-                
                 speak(aiReply);
                 
             } catch (e) {
-                // Kalo Error, KASIH TAU ERRORNYA APA (Biar gak diem doang)
                 output.innerText = "Error: " + e.message;
-                speak("Maaf, terjadi kesalahan sistem.");
-                
-                if(e.message.includes("API key")) {
-                    bukaSetting(); // Buka setting kalau kuncinya salah
-                }
+                speak("Maaf, ada gangguan.");
+                if(e.message.includes("API key")) bukaSetting();
                 setState('idle');
             }
         }
@@ -203,13 +295,15 @@
             } catch(e) { alert("Belum konek..."); }
         }
 
-        // --- AI ENGINE (YANG LEBIH JUJUR KALAU ERROR) ---
+        // --- AI ENGINE (GEMINI PRO) ---
         async function tanyaGemini(text) {
-            if(!API_KEY) throw new Error("API Key belum diisi! Klik tombol setting.");
+            if(!API_KEY) throw new Error("API Key belum diisi!");
             
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
+            // HARDCODE KE GEMINI-PRO (Model Sejuta Umat)
+            // Perhatikan URL-nya: /v1beta/models/gemini-pro:generateContent
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
             
-            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat.`;
+            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab pertanyaan User.`;
 
             const resp = await fetch(url, {
                 method: "POST", headers: { "Content-Type": "application/json" },
@@ -218,7 +312,6 @@
 
             const data = await resp.json();
             
-            // Cek Error dari Google
             if(data.error) {
                 console.error("Gemini Error:", data.error);
                 throw new Error(data.error.message); 
@@ -227,7 +320,6 @@
             return data.candidates[0].content.parts[0].text;
         }
 
-        // --- UTILS ---
         function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
         
         function speak(text) {
