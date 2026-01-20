@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiGenZ QR Connect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        body { background-color: #050505; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; }
+        
+        /* WAJAH ROBOT (CSS) */
+        .face-container { width: 300px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+        .eyes-row { display: flex; gap: 60px; }
+        .eye { width: 80px; height: 20px; background: #0ff; box-shadow: 0 0 20px #0ff; transition: 0.3s; }
+        .mouth { width: 100px; height: 2px; background: #0ff; box-shadow: 0 0 10px #0ff; opacity: 0.5; }
+        
+        /* ANIMASI */
+        .state-idle .eye { animation: blink 4s infinite; }
+        @keyframes blink { 0%, 95% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
+        .state-thinking .eye { background: #fbbf24; box-shadow: 0 0 20px #fbbf24; width: 30px; height: 30px; border-radius: 50%; animation: spin 1s infinite linear; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .state-speaking .eye { background: #4ade80; box-shadow: 0 0 20px #4ade80; height: 30px; }
+        .state-speaking .mouth { background: #4ade80; animation: talk 0.2s infinite alternate; opacity: 1; }
+        @keyframes talk { 0% { height: 2px; width: 100px; } 100% { height: 40px; width: 60px; border-radius: 20px; border: 2px solid #4ade80; background: transparent; } }
+
+        /* UI */
+        .glass-panel { background: rgba(0, 20, 0, 0.8); border: 1px solid #0ff; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative">
+
+    <div id="kiosk-mode" class="hidden flex-col items-center w-full h-full justify-center">
+        <div class="absolute top-10 text-center animate-pulse">
+            <h1 class="text-3xl font-bold tracking-[0.3em] text-cyan-400">SiGenZ <span class="text-yellow-400">AI</span></h1>
+            <p class="text-sm text-cyan-700">GAWEANE MAS ADI USIS</p>
+        </div>
+
+        <div id="robotFace" class="face-container state-idle mb-10">
+            <div class="eyes-row"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+        </div>
+
+        <div class="flex flex-col items-center gap-4 bg-white/10 p-6 rounded-2xl border border-cyan-500/50 backdrop-blur-md">
+            <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
+            <p class="text-xs text-cyan-300 animate-bounce">SCAN UNTUK BERBICARA</p>
+        </div>
+
+        <div id="response-text" class="absolute bottom-10 w-3/4 text-center text-xl font-bold text-cyan-100 drop-shadow-[0_0_5px_rgba(0,255,255,0.8)]">
+            System Standby...
+        </div>
+
+        <button onclick="toggleSettings()" class="absolute top-5 right-5 text-gray-800 opacity-20 hover:opacity-100"><i data-lucide="settings"></i></button>
+    </div>
+
+
+    <div id="remote-mode" class="hidden flex-col w-full h-full p-6 bg-gray-900 items-center justify-center">
+        <div class="w-full max-w-md flex flex-col gap-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-cyan-400">REMOTE CONTROL</h2>
+                <p class="text-xs text-gray-500">Connected to SMAN 1 Pejagoan Kiosk</p>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl min-h-[100px] flex items-center justify-center">
+                <p id="remote-status" class="text-center text-sm text-yellow-400">Siap Mengirim Pesan...</p>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="msgInput" placeholder="Ketik pertanyaan..." class="flex-1 bg-black border border-cyan-700 p-4 rounded-xl text-white outline-none focus:border-cyan-400">
+                <button onclick="kirimPesanDariHP()" class="bg-cyan-600 p-4 rounded-xl text-white font-bold hover:bg-cyan-500"><i data-lucide="send"></i></button>
+            </div>
+            
+            <p class="text-[10px] text-center text-gray-600 mt-10">Powered by SiGenZ Tech</p>
+        </div>
+    </div>
+
+
+    <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
+        <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-4 text-cyan-400">SETUP KIOSK</h2>
+            <label class="text-xs text-gray-500 block mb-1">API KEY (Gemini)</label>
+            <input type="password" id="apiKey" class="w-full bg-black border border-gray-800 text-white p-2 rounded mb-4 text-xs">
+            <button onclick="saveSettings()" class="bg-cyan-700 w-full text-white text-xs py-3 rounded font-bold">SIMPAN & REBOOT</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // --- KONFIGURASI MQTT (JEMBATAN INTERNET) ---
+        // Kita pakai Broker Publik Gratisan (HiveMQ)
+        const MQTT_BROKER = "broker.hivemq.com";
+        const MQTT_PORT = 8000; // WebSocket Port
+        const KIOSK_ID = "sigenz_" + Math.floor(Math.random() * 100000); // ID Unik Kiosk ini
+        let client;
+
+        // --- Cek Mode: Apakah ini Kiosk atau HP? ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRemote = urlParams.get('role') === 'remote';
+        const targetId = urlParams.get('id'); // ID Kiosk yang mau dikontrol
+
+        // DATA AI
+        let API_KEY = localStorage.getItem("my_ai_key") || "";
+        let ACTIVE_MODEL = "gemini-pro";
+
+        // ================= LOGIKA UTAMA =================
+        window.onload = function() {
+            if (isRemote) {
+                // INI TAMPILAN DI HP USER
+                document.getElementById('remote-mode').classList.remove('hidden');
+                initMqttRemote();
+            } else {
+                // INI TAMPILAN DI MONITOR KIOSK
+                document.getElementById('kiosk-mode').classList.remove('hidden');
+                document.getElementById('apiKey').value = API_KEY;
+                if(!API_KEY) toggleSettings();
+                
+                generateQRCode();
+                initMqttKiosk();
+                cariModelOtomatis();
+            }
+        };
+
+        // --- 1. LOGIKA KIOSK (MONITOR) ---
+        function initMqttKiosk() {
+            // Kiosk bertugas MENDENGARKAN (Subscribe)
+            client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + KIOSK_ID);
+            client.onMessageArrived = onMessageKiosk;
+            client.connect({ onSuccess: () => {
+                console.log("Kiosk Online di Channel: " + KIOSK_ID);
+                client.subscribe(KIOSK_ID); // Dengar pesan di channel sendiri
+            }});
+        }
+
+        async function onMessageKiosk(message) {
+            const msg = message.payloadString;
+            console.log("Pesan Masuk: " + msg);
+            
+            // Tampilkan Pesan User
+            const output = document.getElementById('response-text');
+            output.innerText = "User bertanya: " + msg;
+            
+            // Proses ke AI
+            setState('thinking');
+            try {
+                const aiReply = await tanyaGemini(msg);
+                output.innerText = aiReply;
+                speak(aiReply);
+            } catch (e) {
+                output.innerText = "Error: " + e.message;
+                setState('idle');
+            }
+        }
+
+        function generateQRCode() {
+            // QR Code mengarah ke URL ini + parameter remote
+            // PENTING: Untuk demo, kita pakai URL file lokal agak tricky. 
+            // Kalau sudah dihosting online (GitHub Pages/Vercel) ini bakal mulus banget.
+            // Untuk sekarang, kita asumsi URL saat ini bisa diakses HP (misal satu WiFi pakai IP lokal).
+            
+            // Ganti URL_BASE dengan alamat IP Laptopmu jika satu WiFi, atau link hosting.
+            // Contoh: http://192.168.1.5:5500/jarvis_qr.html
+            const currentUrl = window.location.href.split('?')[0]; 
+            const remoteUrl = `${currentUrl}?role=remote&id=${KIOSK_ID}`;
+            
+            new QRCode(document.getElementById("qrcode"), {
+                text: remoteUrl,
+                width: 150, height: 150,
+                colorDark : "#000000", colorLight : "#ffffff"
+            });
+            console.log("Scan QR ini: " + remoteUrl);
+        }
+
+        // --- 2. LOGIKA REMOTE (HP USER) ---
+        function initMqttRemote() {
+            if (!targetId) { alert("QR Code Salah! Tidak ada ID Target."); return; }
+            
+            client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "remote_" + Math.random());
+            client.connect({ onSuccess: () => {
+                document.getElementById('remote-status').innerText = "✅ TERHUBUNG KE LAYAR";
+                document.getElementById('remote-status').classList.replace('text-yellow-400', 'text-green-400');
+            }});
+        }
+
+        function kirimPesanDariHP() {
+            const input = document.getElementById('msgInput');
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            // Kirim ke Channel Kiosk
+            const message = new Paho.MQTT.Message(txt);
+            message.destinationName = targetId;
+            client.send(message);
+
+            input.value = "";
+            document.getElementById('remote-status').innerText = "Pesan terkirim! Lihat layar.";
+            setTimeout(() => document.getElementById('remote-status').innerText = "Siap kirim lagi...", 2000);
+        }
+
+        // --- 3. FUNGSI AI & ANIMASI (SAMA KAYAK SEBELUMNYA) ---
+        async function tanyaGemini(text) {
+            if(!API_KEY) return "API Key belum diisi di Kiosk!";
+            const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
+            const prompt = "Kamu adalah SiGenZ, resepsionis sekolah yang ramah. Jawab singkat dan sopan.";
+            
+            const resp = await fetch(url, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt + "\n\nUser: " + text }] }] })
+            });
+            const data = await resp.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        async function cariModelOtomatis() {
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+                const d = await r.json();
+                const m = d.models?.filter(x => x.supportedGenerationMethods.includes("generateContent"));
+                if(m.length > 0) ACTIVE_MODEL = m[0].name;
+            } catch(e){}
+        }
+
+        function setState(state) {
+            document.getElementById('robotFace').className = `face-container state-${state}`;
+        }
+        
+        function toggleSettings() { document.getElementById('modalSettings').classList.toggle('hidden'); }
+        function saveSettings() {
+            const k = document.getElementById('apiKey').value.trim();
+            localStorage.setItem("my_ai_key", k);
+            API_KEY = k; toggleSettings(); location.reload();
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text.replace(/[*#]/g, ''));
+            u.lang = 'id-ID'; 
+            u.onstart = () => setState('speaking');
+            u.onend = () => setState('idle');
+            window.speechSynthesis.speak(u);
+        }
+    </script>
+</body>
+</html>
