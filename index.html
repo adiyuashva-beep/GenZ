@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ AI Kiosk (PRO)</title>
+    <title>SiGenZ AI Kiosk (Auto-Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,12 +12,10 @@
     
     <style>
         body { background-color: #020202; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; }
-        /* WAJAH ROBOT */
         .face-container { width: 320px; height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 50px; transition: 0.3s; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3)); }
         .eyes-row { display: flex; gap: 70px; }
         .eye { width: 90px; height: 25px; background: #0ff; box-shadow: 0 0 25px #0ff; border-radius: 4px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .mouth { width: 120px; height: 3px; background: #0ff; box-shadow: 0 0 15px #0ff; opacity: 0.6; border-radius: 10px; }
-        /* ANIMASI */
         .state-idle .eye { animation: blink 4s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
         .state-thinking .eye { background: #fbbf24; box-shadow: 0 0 30px #fbbf24; width: 40px; height: 40px; border-radius: 50%; animation: spin 1s infinite linear; }
@@ -29,6 +27,8 @@
     </style>
 </head>
 <body class="h-screen w-screen relative">
+
+    <div id="debug-info" class="absolute top-2 left-2 text-[10px] text-gray-600 z-50 font-mono bg-black/50 p-1 rounded">System Init...</div>
 
     <div id="kiosk-mode" class="hidden flex-col items-center justify-center w-full h-full relative">
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
@@ -48,7 +48,7 @@
         </div>
 
         <div id="response-container" class="z-20 min-h-[60px] flex items-center justify-center w-3/4 text-center mb-8">
-            <p id="response-text" class="text-xl font-medium text-cyan-100 drop-shadow-md">System Online. Silakan Scan Barcode.</p>
+            <p id="response-text" class="text-xl font-medium text-cyan-100 drop-shadow-md">Menunggu API Key...</p>
         </div>
 
         <div class="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-cyan-500/30 backdrop-blur-sm z-20 hover:scale-105 transition duration-300">
@@ -63,39 +63,37 @@
         <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
         <div class="w-full max-w-md flex flex-col gap-6 z-10">
             <div class="text-center space-y-2">
-                <div class="w-16 h-16 bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto border border-cyan-500/50">
-                    <i data-lucide="smartphone" class="w-8 h-8 text-cyan-400"></i>
-                </div>
                 <h2 class="text-2xl font-bold text-white">Remote Control</h2>
-                <p id="remote-status" class="text-xs text-yellow-500 animate-pulse">Menghubungkan ke Layar...</p>
+                <p id="remote-status" class="text-xs text-yellow-500 animate-pulse">Menghubungkan...</p>
             </div>
             <div class="glass-panel p-4 rounded-xl min-h-[120px] flex flex-col items-center justify-center text-center">
-                <p id="remote-feedback" class="text-sm text-gray-400 italic">Silakan ketik pertanyaan Anda...</p>
+                <p id="remote-feedback" class="text-sm text-gray-400 italic">Silakan ketik pertanyaan...</p>
             </div>
             <div class="flex gap-2">
                 <input type="text" id="msgInput" placeholder="Tanya sesuatu..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-cyan-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
-                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-xl text-white font-bold shadow-lg hover:scale-105 transition active:scale-95"><i data-lucide="send" class="w-6 h-6"></i></button>
+                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-xl text-white font-bold shadow-lg"><i data-lucide="send" class="w-6 h-6"></i></button>
             </div>
-            <p class="text-[10px] text-center text-gray-700 mt-10">Powered by SiGenZ Tech</p>
         </div>
     </div>
 
     <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
         <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm shadow-[0_0_50px_rgba(0,255,255,0.2)]">
-            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> KONFIGURASI</h2>
-            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Gemini.</p>
+            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> SYSTEM CONFIG</h2>
+            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Google Gemini.</p>
             <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="AIzaSy...">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN & RESET</button>
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold">SIMPAN & CARI MODEL</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // =================================================================
-        // 🧠 DATABASE PENGETAHUAN (EDIT DI SINI)
-        // =================================================================
+        // DATA SEKOLAH (Edit sesuai kebutuhan)
         const DATABASE_SEKOLAH = `
+        Nama: SiGenZ (Sistem Generasi Z).
+        Lokasi: SMAN 1 Pejagoan, Kebumen.
+        Pencipta: Mas Adi (Asmaul Riyadi).
+        Fungsi: Asisten Informasi Sekolah.
         Identitas:
         - Nama: SiGenZ (Sistem Generasi Z).
         - Lokasi: SMAN 1 Pejagoan, Kebumen.
@@ -194,26 +192,19 @@ Feby Wahyu Harumi, S.Pd
 Khumaedi Masduqi, S.Pd.I
 Syifa Nurmala S.Pd
 Erwanda Dharmawan, S.Pd.
-        
-        Gaya Bicara:
-        - sopan boleh yang lucu.
-        - Sopan tapi santai.
-        - Gunakan Bahasa Indonesia.
         `;
-        // =================================================================
 
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_sman1pejagoan_pro_v8"; 
+        const KIOSK_ID = "sigenz_sman1pejagoan_autofix_v9"; 
         
         let API_KEY = localStorage.getItem("my_ai_key") || "";
-
-        // KITA GUNAKAN MODEL 'PRO' (YANG PALING STABIL)
-        const ACTIVE_MODEL = "gemini-pro"; 
+        let ACTIVE_MODEL = ""; // AKAN DIISI OTOMATIS OLEH SCRIPT
 
         let client;
         const urlParams = new URLSearchParams(window.location.search);
         const isRemote = urlParams.get('role') === 'remote';
+        const debugLabel = document.getElementById('debug-info');
 
         window.onload = function() {
             if (isRemote) {
@@ -221,27 +212,72 @@ Erwanda Dharmawan, S.Pd.
                 initMqttRemote();
             } else {
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                if(!API_KEY) bukaSetting();
-                else document.getElementById('apiKeyInput').value = API_KEY;
-                
-                initMqttKiosk();
-                generateQRCode();
-                document.body.addEventListener('click', () => { speak("SiGenZ Siap."); }, {once:true});
+                if(!API_KEY) {
+                    bukaSetting();
+                } else {
+                    document.getElementById('apiKeyInput').value = API_KEY;
+                    initMqttKiosk();
+                    generateQRCode();
+                    cariModelDanKonek(); // INI FUNGSI AJAIBNYA
+                    document.body.addEventListener('click', () => { speak("Siap."); }, {once:true});
+                }
             }
         };
 
+        // --- FUNGSI PENCARI MODEL OTOMATIS (ANTI ERROR) ---
+        async function cariModelDanKonek() {
+            debugLabel.innerText = "Mencari Model AI...";
+            const output = document.getElementById('response-text');
+            
+            if(!API_KEY) { debugLabel.innerText = "API Key Missing"; return; }
+
+            try {
+                // 1. Tanya Google: Kamu punya model apa aja?
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+                const data = await resp.json();
+
+                if(data.error) {
+                    debugLabel.innerText = "Auth Error";
+                    output.innerText = "Error API Key: " + data.error.message;
+                    bukaSetting();
+                    return;
+                }
+
+                // 2. Filter model yang bisa generate text
+                const validModels = data.models?.filter(m => m.supportedGenerationMethods.includes("generateContent"));
+
+                if(validModels && validModels.length > 0) {
+                    // 3. PRIORITAS: Cari yang ada kata "flash" (Biar cepat)
+                    let bestModel = validModels.find(m => m.name.includes("flash"));
+                    
+                    // Kalau gak ada flash, ambil YANG PERTAMA aja (Terserah namanya apa)
+                    if (!bestModel) bestModel = validModels[0];
+
+                    ACTIVE_MODEL = bestModel.name; // Simpan nama model (misal: models/gemini-1.5-flash-001)
+                    
+                    // Update Status di Layar
+                    debugLabel.innerText = "Connected: " + ACTIVE_MODEL;
+                    debugLabel.classList.add("text-green-500");
+                    output.innerText = "System Online. Otak: " + ACTIVE_MODEL.replace("models/", "");
+                    
+                } else {
+                    debugLabel.innerText = "No Models Found";
+                    output.innerText = "Akun Google ini tidak punya akses ke model AI apapun.";
+                }
+
+            } catch(e) {
+                debugLabel.innerText = "Net Error";
+                output.innerText = "Gagal menghubungi Google. Cek Internet.";
+            }
+        }
+
         // --- MQTT LOGIC ---
         function initMqttKiosk() {
-            const statusDiv = document.getElementById('connection-status');
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + Math.random().toString(16).substr(2, 8));
             client.onMessageArrived = onMessageKiosk;
             client.connect({ 
                 useSSL: true, 
-                onSuccess: () => {
-                    statusDiv.innerText = "🟢 SERVER CONNECTED";
-                    statusDiv.classList.add('text-green-500');
-                    client.subscribe(KIOSK_ID);
-                }
+                onSuccess: () => { client.subscribe(KIOSK_ID); }
             });
         }
 
@@ -266,18 +302,22 @@ Erwanda Dharmawan, S.Pd.
             output.classList.add('italic', 'text-yellow-300');
             setState('thinking');
 
+            if(!ACTIVE_MODEL) {
+                output.innerText = "Error: Model AI belum siap.";
+                speak("Tunggu sebentar, sedang mencari jaringan.");
+                await cariModelDanKonek(); // Coba cari lagi
+                return;
+            }
+
             try {
                 const aiReply = await tanyaGemini(msg);
-                
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
                 output.classList.add('text-cyan-100');
                 speak(aiReply);
-                
             } catch (e) {
                 output.innerText = "Error: " + e.message;
-                speak("Maaf, ada gangguan.");
-                if(e.message.includes("API key")) bukaSetting();
+                speak("Maaf, error lagi.");
                 setState('idle');
             }
         }
@@ -295,15 +335,13 @@ Erwanda Dharmawan, S.Pd.
             } catch(e) { alert("Belum konek..."); }
         }
 
-        // --- AI ENGINE (GEMINI PRO) ---
+        // --- AI ENGINE (DYNAMIC MODEL) ---
         async function tanyaGemini(text) {
-            if(!API_KEY) throw new Error("API Key belum diisi!");
+            // URL DIBUAT DINAMIS SESUAI MODEL YANG DITEMUKAN
+            // ACTIVE_MODEL sudah berisi "models/nama-model", jadi URLnya pas
+            const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
             
-            // HARDCODE KE GEMINI-PRO (Model Sejuta Umat)
-            // Perhatikan URL-nya: /v1beta/models/gemini-pro:generateContent
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-            
-            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab pertanyaan User.`;
+            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat.`;
 
             const resp = await fetch(url, {
                 method: "POST", headers: { "Content-Type": "application/json" },
@@ -313,7 +351,8 @@ Erwanda Dharmawan, S.Pd.
             const data = await resp.json();
             
             if(data.error) {
-                console.error("Gemini Error:", data.error);
+                // Kalau kena Rate Limit (429), kasih tau user suruh nunggu
+                if(data.error.code === 429) return "Kuota habis. Tunggu 1 menit ya.";
                 throw new Error(data.error.message); 
             }
             
@@ -345,7 +384,7 @@ Erwanda Dharmawan, S.Pd.
             localStorage.setItem("my_ai_key", k);
             API_KEY = k;
             document.getElementById('modalSettings').classList.add('hidden');
-            location.reload(); 
+            cariModelDanKonek(); // Cari ulang pas disave
         }
     </script>
 </body>
