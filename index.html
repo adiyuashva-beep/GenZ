@@ -12,71 +12,28 @@
     
     <style>
         body { background-color: #020202; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; }
-        
-        /* --- WAJAH ROBOT (CENTER) --- */
-        .face-container { 
-            width: 320px; height: 320px; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            gap: 50px; 
-            transition: 0.3s;
-            /* Efek Glow Futuristik */
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
-        }
-        
+        .face-container { width: 320px; height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 50px; transition: 0.3s; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3)); }
         .eyes-row { display: flex; gap: 70px; }
-        
-        .eye { 
-            width: 90px; height: 25px; 
-            background: #0ff; 
-            box-shadow: 0 0 25px #0ff; 
-            border-radius: 4px;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        
-        .mouth { 
-            width: 120px; height: 3px; 
-            background: #0ff; 
-            box-shadow: 0 0 15px #0ff; 
-            opacity: 0.6; 
-            border-radius: 10px;
-        }
-
-        /* --- ANIMASI --- */
+        .eye { width: 90px; height: 25px; background: #0ff; box-shadow: 0 0 25px #0ff; border-radius: 4px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .mouth { width: 120px; height: 3px; background: #0ff; box-shadow: 0 0 15px #0ff; opacity: 0.6; border-radius: 10px; }
         .state-idle .eye { animation: blink 4s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
-        
-        .state-thinking .eye { 
-            background: #fbbf24; box-shadow: 0 0 30px #fbbf24; 
-            width: 40px; height: 40px; border-radius: 50%; 
-            animation: spin 1s infinite linear; 
-        }
+        .state-thinking .eye { background: #fbbf24; box-shadow: 0 0 30px #fbbf24; width: 40px; height: 40px; border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .state-speaking .eye { 
-            background: #4ade80; box-shadow: 0 0 30px #4ade80; 
-            height: 40px; width: 100px; /* Mata membesar pas ngomong */
-        }
-        .state-speaking .mouth { 
-            background: #4ade80; 
-            animation: talk 0.15s infinite alternate; 
-            opacity: 1; height: 5px;
-        }
-        @keyframes talk { 
-            0% { width: 120px; transform: scaleY(1); } 
-            100% { width: 80px; transform: scaleY(3); border-radius: 50%; } 
-        }
-
-        /* UI Remote */
+        .state-speaking .eye { background: #4ade80; box-shadow: 0 0 30px #4ade80; height: 40px; width: 100px; }
+        .state-speaking .mouth { background: #4ade80; animation: talk 0.15s infinite alternate; opacity: 1; height: 5px; }
+        @keyframes talk { 0% { width: 120px; transform: scaleY(1); } 100% { width: 80px; transform: scaleY(3); border-radius: 50%; } }
         .glass-panel { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0,255,255,0.2); backdrop-filter: blur(10px); }
-        .typing-indicator::after { content: '...'; animation: blink 1s infinite; }
     </style>
 </head>
 <body class="h-screen w-screen relative">
 
     <div id="kiosk-mode" class="hidden flex-col items-center justify-center w-full h-full relative">
-        
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+
+        <button onclick="bukaSetting()" class="absolute top-5 right-5 z-50 text-gray-700 hover:text-cyan-400 opacity-50 hover:opacity-100 transition">
+            <i data-lucide="settings" class="w-6 h-6"></i>
+        </button>
 
         <div class="absolute top-10 text-center z-10">
             <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">SiGenZ</h1>
@@ -84,10 +41,7 @@
         </div>
 
         <div id="robotFace" class="face-container state-idle z-20 mb-8">
-            <div class="eyes-row">
-                <div class="eye"></div>
-                <div class="eye"></div>
-            </div>
+            <div class="eyes-row"><div class="eye"></div><div class="eye"></div></div>
             <div class="mouth"></div>
         </div>
 
@@ -101,14 +55,10 @@
         </div>
         
         <div id="connection-status" class="absolute bottom-2 left-4 text-[10px] text-gray-600">Connecting...</div>
-
     </div>
 
-
     <div id="remote-mode" class="hidden flex-col w-full h-full bg-[#0a0a0a] items-center justify-center p-6 relative">
-        
         <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-
         <div class="w-full max-w-md flex flex-col gap-6 z-10">
             <div class="text-center space-y-2">
                 <div class="w-16 h-16 bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto border border-cyan-500/50">
@@ -117,147 +67,116 @@
                 <h2 class="text-2xl font-bold text-white">Remote Control</h2>
                 <p id="remote-status" class="text-xs text-yellow-500 animate-pulse">Menghubungkan ke Layar...</p>
             </div>
-
             <div class="glass-panel p-4 rounded-xl min-h-[120px] flex flex-col items-center justify-center text-center">
                 <p id="remote-feedback" class="text-sm text-gray-400 italic">Silakan ketik pertanyaan Anda...</p>
             </div>
-
             <div class="flex gap-2">
-                <input type="text" id="msgInput" placeholder="Tanya sesuatu..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
-                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-xl text-white font-bold shadow-lg hover:scale-105 transition active:scale-95">
-                    <i data-lucide="send" class="w-6 h-6"></i>
-                </button>
+                <input type="text" id="msgInput" placeholder="Tanya sesuatu..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-cyan-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
+                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-xl text-white font-bold shadow-lg hover:scale-105 transition active:scale-95"><i data-lucide="send" class="w-6 h-6"></i></button>
             </div>
-            
             <p class="text-[10px] text-center text-gray-700 mt-10">Powered by SiGenZ Tech</p>
         </div>
     </div>
 
     <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-        <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm">
-            <h2 class="text-xl font-bold mb-4 text-cyan-400">ADMIN SETUP</h2>
-            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-2 rounded mb-4 text-xs" placeholder="API Key">
-            <button onclick="saveSettings()" class="bg-cyan-700 w-full text-white py-2 rounded">SIMPAN</button>
+        <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm shadow-[0_0_50px_rgba(0,255,255,0.2)]">
+            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> AKTIVASI SISTEM</h2>
+            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Google Gemini (Baru) agar sistem dapat berpikir.</p>
+            
+            <label class="text-[10px] text-cyan-700 font-bold">API KEY</label>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="Tempel AIzaSy... di sini">
+            
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN & JALANKAN</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // --- 1. KONFIGURASI MQTT (WAJIB PORT 8884 UNTUK VERCEL) ---
         const MQTT_BROKER = "broker.hivemq.com";
-        const MQTT_PORT = 8884; // Port Aman (WSS)
+        const MQTT_PORT = 8884; 
+        const KIOSK_ID = "sigenz_sman1pejagoan_main_v2"; // Channel Baru
         
-        // ID Unik (Biar gak tabrakan sama orang lain)
-        // Kita pakai nama unik biar stabil
-        const KIOSK_ID = "sigenz_sman1pejagoan_main_v1"; 
-
-        // API KEY (HARDCODED SESUAI PERMINTAAN)
-        let API_KEY = "AIzaSyCQc33j7KBgURfz-vZnZRbpdZp0Wn1e6yo";
-        // Cek kalau ada override dari localStorage
+        // --- API KEY KOSONG (AMAN BUAT GITHUB) ---
+        let API_KEY = ""; 
+        // Cek Local Storage
         if(localStorage.getItem("my_ai_key")) API_KEY = localStorage.getItem("my_ai_key");
 
         let client;
-        let ACTIVE_MODEL = "gemini-pro"; // Default Model
+        let ACTIVE_MODEL = "gemini-pro"; 
 
-        // Cek URL Params (Kiosk vs Remote)
         const urlParams = new URLSearchParams(window.location.search);
         const isRemote = urlParams.get('role') === 'remote';
 
         window.onload = function() {
             if (isRemote) {
-                // LOGIKA HP
                 document.getElementById('remote-mode').classList.remove('hidden');
                 initMqttRemote();
             } else {
-                // LOGIKA MONITOR
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                document.getElementById('apiKeyInput').value = API_KEY;
                 
-                // Klik 3x di judul buat buka setting (Hidden Feature)
-                document.querySelector('h1').addEventListener('click', (e) => {
-                    if(e.detail === 3) document.getElementById('modalSettings').classList.toggle('hidden');
-                });
+                // JIKA KEY KOSONG -> BUKA POPUP OTOMATIS
+                if(!API_KEY) {
+                    bukaSetting();
+                } else {
+                    document.getElementById('apiKeyInput').value = API_KEY;
+                    initMqttKiosk();
+                    cariModelOtomatis();
+                }
 
                 generateQRCode();
-                initMqttKiosk();
-                cariModelOtomatis();
-                
-                // Pancingan Suara (Klik di mana aja buat aktifin audio context browser)
-                document.body.addEventListener('click', () => {
-                   speak("Sistem Siap."); 
-                }, {once:true});
+                document.body.addEventListener('click', () => { speak("Sistem Siap."); }, {once:true});
             }
         };
 
-        // ================= MQTT LOGIC (JARUR AMAN / SSL) =================
-        
+        // --- MQTT LOGIC ---
         function initMqttKiosk() {
             const statusDiv = document.getElementById('connection-status');
-            statusDiv.innerText = "Connecting to Server...";
-            
+            statusDiv.innerText = "Connecting...";
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + Math.random().toString(16).substr(2, 8));
             client.onMessageArrived = onMessageKiosk;
-            
             client.connect({ 
-                useSSL: true, // WAJIB TRUE UNTUK VERCEL
+                useSSL: true, 
                 onSuccess: () => {
-                    console.log("Kiosk Connected");
+                    console.log("Connected");
                     statusDiv.innerText = "🟢 SERVER CONNECTED";
                     statusDiv.classList.add('text-green-500');
                     client.subscribe(KIOSK_ID);
                 },
-                onFailure: (e) => {
-                    statusDiv.innerText = "🔴 ERROR: " + e.errorMessage;
-                    alert("Gagal konek server. Cek internet.");
-                }
+                onFailure: (e) => { statusDiv.innerText = "🔴 ERROR: " + e.errorMessage; }
             });
         }
 
         function initMqttRemote() {
             const statusDiv = document.getElementById('remote-status');
-            
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "remote_" + Math.random().toString(16).substr(2, 8));
-            
             client.connect({ 
-                useSSL: true, // WAJIB TRUE
+                useSSL: true, 
                 onSuccess: () => {
                     statusDiv.innerText = "✅ TERHUBUNG KE LAYAR";
                     statusDiv.classList.replace('text-yellow-500', 'text-green-400');
                     statusDiv.classList.remove('animate-pulse');
                 },
-                onFailure: (e) => {
-                    statusDiv.innerText = "❌ GAGAL: " + e.errorMessage;
-                }
+                onFailure: (e) => { statusDiv.innerText = "❌ GAGAL: " + e.errorMessage; }
             });
         }
 
-        // ================= LOGIKA PESAN & AI =================
-
         async function onMessageKiosk(message) {
             const msg = message.payloadString;
-            console.log("Pesan Masuk: " + msg);
-            
-            // 1. Tampilkan Teks User
             const output = document.getElementById('response-text');
             output.innerText = '"' + msg + '"';
             output.classList.add('italic', 'text-yellow-300');
-            
-            // 2. Mata Mikir
             setState('thinking');
 
-            // 3. Kirim ke Gemini
             try {
                 const aiReply = await tanyaGemini(msg);
-                
-                // 4. Tampilkan Jawaban & Ngomong
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
                 output.classList.add('text-cyan-100');
                 speak(aiReply);
-                
             } catch (e) {
-                output.innerText = "Error AI: " + e.message;
+                output.innerText = "Error: " + e.message;
+                if(e.message.includes("API key")) bukaSetting(); // Kalau error key, buka setting
                 setState('idle');
             }
         }
@@ -266,30 +185,21 @@
             const input = document.getElementById('msgInput');
             const txt = input.value.trim();
             if(!txt) return;
-
-            // Kirim ke MQTT
             try {
                 const message = new Paho.MQTT.Message(txt);
                 message.destinationName = KIOSK_ID;
                 client.send(message);
-
-                // Feedback UI di HP
                 input.value = "";
                 const feedback = document.getElementById('remote-feedback');
                 feedback.innerText = "Terkirim: " + txt;
-                feedback.classList.add('text-cyan-400');
-                
-            } catch(e) {
-                alert("Belum terhubung ke server. Tunggu sebentar.");
-            }
+            } catch(e) { alert("Tunggu koneksi..."); }
         }
 
-        // ================= GEMINI AI ENGINE =================
-        
+        // --- AI ENGINE ---
         async function tanyaGemini(text) {
+            if(!API_KEY) throw new Error("API Key Kosong");
             const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
-            const sysPrompt = "Kamu adalah SiGenZ, Asisten AI SMAN 1 Pejagoan yang cerdas dan gaul. Jawab singkat (maksimal 2 kalimat) agar enak didengar.";
-            
+            const sysPrompt = "Kamu adalah SiGenZ, AI Asisten Sekolah. Jawab singkat padat maksimal 2 kalimat.";
             const resp = await fetch(url, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser: " + text }] }] })
@@ -305,24 +215,17 @@
                 const d = await r.json();
                 const m = d.models?.filter(x => x.supportedGenerationMethods.includes("generateContent"));
                 if(m && m.length > 0) ACTIVE_MODEL = m[0].name;
-                console.log("Model: " + ACTIVE_MODEL);
-            } catch(e){ console.log("Gagal cari model: " + e); }
+            } catch(e){}
         }
 
-        // ================= VISUAL & AUDIO =================
-
-        function setState(state) {
-            document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`;
-        }
+        // --- UTILS ---
+        function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
         
         function speak(text) {
             window.speechSynthesis.cancel();
             const cleanText = text.replace(/[*#]/g, '');
             const u = new SpeechSynthesisUtterance(cleanText);
-            u.lang = 'id-ID'; 
-            u.rate = 1.0; 
-            u.pitch = 1.0;
-            
+            u.lang = 'id-ID'; u.rate = 1.0; 
             u.onstart = () => setState('speaking');
             u.onend = () => setState('idle');
             window.speechSynthesis.speak(u);
@@ -330,19 +233,19 @@
 
         function generateQRCode() {
             const currentUrl = window.location.href.split('?')[0]; 
-            const remoteUrl = `${currentUrl}?role=remote`; // ID sudah dihardcode biar stabil
-            
-            new QRCode(document.getElementById("qrcode"), {
-                text: remoteUrl,
-                width: 120, height: 120,
-                colorDark : "#000000", colorLight : "#ffffff"
-            });
+            const remoteUrl = `${currentUrl}?role=remote`;
+            new QRCode(document.getElementById("qrcode"), { text: remoteUrl, width: 120, height: 120, colorDark : "#000000", colorLight : "#ffffff" });
         }
+        
+        function bukaSetting() { document.getElementById('modalSettings').classList.remove('hidden'); }
         
         function saveSettings() {
             const k = document.getElementById('apiKeyInput').value.trim();
+            if(!k) return alert("Isi API Key dulu!");
             localStorage.setItem("my_ai_key", k);
-            location.reload();
+            API_KEY = k;
+            document.getElementById('modalSettings').classList.add('hidden');
+            location.reload(); // Refresh biar sistem jalan
         }
     </script>
 </body>
