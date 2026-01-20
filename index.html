@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ AI Kiosk</title>
+    <title>SiGenZ AI Kiosk (Stabil)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -80,58 +80,38 @@
 
     <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
         <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm shadow-[0_0_50px_rgba(0,255,255,0.2)]">
-            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> AKTIVASI SISTEM</h2>
-            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Google Gemini (Baru) agar sistem dapat berpikir.</p>
-            
-            <label class="text-[10px] text-cyan-700 font-bold">API KEY</label>
-            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="Tempel AIzaSy... di sini">
-            
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN & JALANKAN</button>
+            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> KONFIGURASI</h2>
+            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Gemini.</p>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="AIzaSy...">
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold hover:scale-105 transition">SIMPAN</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // =================================================================
-        // 🧠 KOLOM PENGETAHUAN GEN-Z (EDIT BAGIAN INI SESUKA HATI)
-        // =================================================================
+        // --- DATABASE PENGETAHUAN ---
         const DATABASE_SEKOLAH = `
         INFORMASI UTAMA:
-        - Nama AI: SiGenZ (Sistem Generasi Z).
-        - Lokasi: SMAN 1 Pejagoan, Kebumen.
-        - Pencipta: Dibuat oleh Mas Adi (Asmaul Riyadi), seorang Staff TU & Operator Dapodik Visioner di SMAN 1 Pejagoan.
-        - Tugas: Membantu tamu, siswa, dan guru memberikan informasi seputar sekolah.
-
-        DATA GURU & STAFF:
-        - Kepala Sekolah: Bapak [TULIS NAMA KEPALA SEKOLAH DI SINI]
-        - Waka Kurikulum: [TULIS NAMA DI SINI]
-        - Waka Kesiswaan: [TULIS NAMA DI SINI]
-        - Guru BK Koordinator: [TULIS NAMA DI SINI]
-        - Guru BK Favorit: [TULIS NAMA DI SINI]
-        - Staff TU Paling Ganteng: Tentu saja Mas Adi (Creator SiGenZ).
-
-        INFORMASI LAIN:
-        - Fasilitas: Masjid, Lab Komputer, Perpustakaan Digital, Kantin Sehat.
-        - Ekstrakurikuler Unggulan: Pramuka, Basket, Rohis, Kir.
-        - Moto Sekolah: [TULIS MOTO SEKOLAH DI SINI]
-
-        PETUNJUK MENJAWAB:
-        - Jika ditanya siapa pembuatmu, jawab dengan bangga bahwa Mas Adi (Asmaul Riyadi) yang membuatmu.
-        - Jawablah dengan ramah, singkat, dan sedikit gaul khas anak muda.
+        - Nama AI: SiGenZ.
+        - Pencipta: Mas Adi (Asmaul Riyadi) - Staff TU SMAN 1 Pejagoan.
+        - Fungsi: Asisten Informasi Sekolah.
+        
+        TIPS MENJAWAB:
+        - Jawab singkat (Max 2 kalimat).
+        - Gunakan bahasa sopan.
         `;
-        // =================================================================
 
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_sman1pejagoan_brain_v7"; 
+        const KIOSK_ID = "sigenz_sman1pejagoan_stabil_v8"; 
         
-        let API_KEY = ""; 
-        if(localStorage.getItem("my_ai_key")) API_KEY = localStorage.getItem("my_ai_key");
+        let API_KEY = localStorage.getItem("my_ai_key") || "";
+        
+        // KITA PAKSA PAKAI MODEL FLASH BIAR NGEBUT & IRIT
+        const ACTIVE_MODEL = "gemini-1.5-flash"; 
 
         let client;
-        let ACTIVE_MODEL = "gemini-pro"; 
-
         const urlParams = new URLSearchParams(window.location.search);
         const isRemote = urlParams.get('role') === 'remote';
 
@@ -141,22 +121,18 @@
                 initMqttRemote();
             } else {
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                if(!API_KEY) {
-                    bukaSetting();
-                } else {
-                    document.getElementById('apiKeyInput').value = API_KEY;
-                    initMqttKiosk();
-                    cariModelOtomatis();
-                }
+                if(!API_KEY) bukaSetting();
+                else document.getElementById('apiKeyInput').value = API_KEY;
+                
+                initMqttKiosk();
                 generateQRCode();
-                document.body.addEventListener('click', () => { speak("SiGenZ Siap Melayani."); }, {once:true});
+                document.body.addEventListener('click', () => { speak("Siap."); }, {once:true});
             }
         };
 
         // --- MQTT LOGIC ---
         function initMqttKiosk() {
             const statusDiv = document.getElementById('connection-status');
-            statusDiv.innerText = "Connecting...";
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + Math.random().toString(16).substr(2, 8));
             client.onMessageArrived = onMessageKiosk;
             client.connect({ 
@@ -165,8 +141,7 @@
                     statusDiv.innerText = "🟢 SERVER CONNECTED";
                     statusDiv.classList.add('text-green-500');
                     client.subscribe(KIOSK_ID);
-                },
-                onFailure: (e) => { statusDiv.innerText = "🔴 ERROR: " + e.errorMessage; }
+                }
             });
         }
 
@@ -176,30 +151,41 @@
             client.connect({ 
                 useSSL: true, 
                 onSuccess: () => {
-                    statusDiv.innerText = "✅ TERHUBUNG KE LAYAR";
+                    statusDiv.innerText = "✅ TERHUBUNG";
                     statusDiv.classList.replace('text-yellow-500', 'text-green-400');
                     statusDiv.classList.remove('animate-pulse');
-                },
-                onFailure: (e) => { statusDiv.innerText = "❌ GAGAL: " + e.errorMessage; }
+                }
             });
         }
 
         async function onMessageKiosk(message) {
             const msg = message.payloadString;
             const output = document.getElementById('response-text');
+            
+            // Tampilkan Pesan User
             output.innerText = '"' + msg + '"';
             output.classList.add('italic', 'text-yellow-300');
             setState('thinking');
 
             try {
+                // Tanya Gemini
                 const aiReply = await tanyaGemini(msg);
+                
+                // Tampilkan Jawaban
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
                 output.classList.add('text-cyan-100');
+                
                 speak(aiReply);
+                
             } catch (e) {
+                // Kalo Error, KASIH TAU ERRORNYA APA (Biar gak diem doang)
                 output.innerText = "Error: " + e.message;
-                if(e.message.includes("API key")) bukaSetting();
+                speak("Maaf, terjadi kesalahan sistem.");
+                
+                if(e.message.includes("API key")) {
+                    bukaSetting(); // Buka setting kalau kuncinya salah
+                }
                 setState('idle');
             }
         }
@@ -213,60 +199,45 @@
                 message.destinationName = KIOSK_ID;
                 client.send(message);
                 input.value = "";
-                const feedback = document.getElementById('remote-feedback');
-                feedback.innerText = "Terkirim: " + txt;
-            } catch(e) { alert("Tunggu koneksi..."); }
+                document.getElementById('remote-feedback').innerText = "Terkirim: " + txt;
+            } catch(e) { alert("Belum konek..."); }
         }
 
-        // --- AI ENGINE DENGAN CONTEKAN DATA ---
+        // --- AI ENGINE (YANG LEBIH JUJUR KALAU ERROR) ---
         async function tanyaGemini(text) {
-            if(!API_KEY) throw new Error("API Key Kosong");
-            const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
+            if(!API_KEY) throw new Error("API Key belum diisi! Klik tombol setting.");
             
-            // INI RAHASIANYA: KITA GABUNGKAN PENGETAHUAN SEKOLAH DENGAN PERTANYAAN USER
-            const sysPrompt = `Kamu adalah SiGenZ, AI Asisten Sekolah SMAN 1 Pejagoan.
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
             
-            Gunakan DATA PENGETAHUAN ini untuk menjawab pertanyaan:
-            ${DATABASE_SEKOLAH}
-            
-            Instruksi:
-            1. Jika pertanyaan ada di data di atas, jawab sesuai data.
-            2. Jika tidak ada di data, jawablah secara umum dengan sopan.
-            3. Jawab singkat (maksimal 2 kalimat) karena akan dibacakan suara.
-            4. Gaya bahasa: Ramah, Membantu, Sedikit Gaul.`;
+            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat.`;
 
             const resp = await fetch(url, {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser bertanya: " + text }] }] })
+                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser: " + text }] }] })
             });
+
             const data = await resp.json();
-            if(data.error) throw new Error(data.error.message);
+            
+            // Cek Error dari Google
+            if(data.error) {
+                console.error("Gemini Error:", data.error);
+                throw new Error(data.error.message); 
+            }
+            
             return data.candidates[0].content.parts[0].text;
         }
 
-       // GANTI FUNGSI cariModelOtomatis DENGAN INI:
+        // --- UTILS ---
+        function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
         
-        async function cariModelOtomatis() {
-            try {
-                // Kita panggil daftar model
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
-                const d = await r.json();
-                
-                // STRATEGI BARU: Cari yang namanya ada "flash" (Kuota Paling Gede)
-                const modelFlash = d.models?.find(m => m.name.includes("gemini-1.5-flash"));
-                
-                if (modelFlash) {
-                    ACTIVE_MODEL = modelFlash.name;
-                    console.log("Model Terpilih (High Speed): " + ACTIVE_MODEL);
-                } else {
-                    // Kalau gak nemu Flash, baru ambil sembarang (Fallback)
-                    const m = d.models?.filter(x => x.supportedGenerationMethods.includes("generateContent"));
-                    if(m && m.length > 0) ACTIVE_MODEL = m[0].name;
-                }
-            } catch(e){ 
-                // Kalau error pencarian, paksa tembak model standar
-                ACTIVE_MODEL = "gemini-1.5-flash"; 
-            }
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const cleanText = text.replace(/[*#]/g, '');
+            const u = new SpeechSynthesisUtterance(cleanText);
+            u.lang = 'id-ID'; u.rate = 1.0; 
+            u.onstart = () => setState('speaking');
+            u.onend = () => setState('idle');
+            window.speechSynthesis.speak(u);
         }
 
         function generateQRCode() {
@@ -276,7 +247,6 @@
         }
         
         function bukaSetting() { document.getElementById('modalSettings').classList.remove('hidden'); }
-        
         function saveSettings() {
             const k = document.getElementById('apiKeyInput').value.trim();
             if(!k) return alert("Isi API Key dulu!");
