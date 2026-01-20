@@ -93,13 +93,40 @@
     <script>
         lucide.createIcons();
         
+        // =================================================================
+        // 🧠 KOLOM PENGETAHUAN GEN-Z (EDIT BAGIAN INI SESUKA HATI)
+        // =================================================================
+        const DATABASE_SEKOLAH = `
+        INFORMASI UTAMA:
+        - Nama AI: SiGenZ (Sistem Generasi Z).
+        - Lokasi: SMAN 1 Pejagoan, Kebumen.
+        - Pencipta: Dibuat oleh Mas Adi (Asmaul Riyadi), seorang Staff TU & Operator Dapodik Visioner di SMAN 1 Pejagoan.
+        - Tugas: Membantu tamu, siswa, dan guru memberikan informasi seputar sekolah.
+
+        DATA GURU & STAFF:
+        - Kepala Sekolah: Bapak [TULIS NAMA KEPALA SEKOLAH DI SINI]
+        - Waka Kurikulum: [TULIS NAMA DI SINI]
+        - Waka Kesiswaan: [TULIS NAMA DI SINI]
+        - Guru BK Koordinator: [TULIS NAMA DI SINI]
+        - Guru BK Favorit: [TULIS NAMA DI SINI]
+        - Staff TU Paling Ganteng: Tentu saja Mas Adi (Creator SiGenZ).
+
+        INFORMASI LAIN:
+        - Fasilitas: Masjid, Lab Komputer, Perpustakaan Digital, Kantin Sehat.
+        - Ekstrakurikuler Unggulan: Pramuka, Basket, Rohis, Kir.
+        - Moto Sekolah: [TULIS MOTO SEKOLAH DI SINI]
+
+        PETUNJUK MENJAWAB:
+        - Jika ditanya siapa pembuatmu, jawab dengan bangga bahwa Mas Adi (Asmaul Riyadi) yang membuatmu.
+        - Jawablah dengan ramah, singkat, dan sedikit gaul khas anak muda.
+        `;
+        // =================================================================
+
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_sman1pejagoan_main_v2"; // Channel Baru
+        const KIOSK_ID = "sigenz_sman1pejagoan_brain_v7"; 
         
-        // --- API KEY KOSONG (AMAN BUAT GITHUB) ---
         let API_KEY = ""; 
-        // Cek Local Storage
         if(localStorage.getItem("my_ai_key")) API_KEY = localStorage.getItem("my_ai_key");
 
         let client;
@@ -114,8 +141,6 @@
                 initMqttRemote();
             } else {
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                
-                // JIKA KEY KOSONG -> BUKA POPUP OTOMATIS
                 if(!API_KEY) {
                     bukaSetting();
                 } else {
@@ -123,9 +148,8 @@
                     initMqttKiosk();
                     cariModelOtomatis();
                 }
-
                 generateQRCode();
-                document.body.addEventListener('click', () => { speak("Sistem Siap."); }, {once:true});
+                document.body.addEventListener('click', () => { speak("SiGenZ Siap Melayani."); }, {once:true});
             }
         };
 
@@ -138,7 +162,6 @@
             client.connect({ 
                 useSSL: true, 
                 onSuccess: () => {
-                    console.log("Connected");
                     statusDiv.innerText = "🟢 SERVER CONNECTED";
                     statusDiv.classList.add('text-green-500');
                     client.subscribe(KIOSK_ID);
@@ -176,7 +199,7 @@
                 speak(aiReply);
             } catch (e) {
                 output.innerText = "Error: " + e.message;
-                if(e.message.includes("API key")) bukaSetting(); // Kalau error key, buka setting
+                if(e.message.includes("API key")) bukaSetting();
                 setState('idle');
             }
         }
@@ -195,14 +218,26 @@
             } catch(e) { alert("Tunggu koneksi..."); }
         }
 
-        // --- AI ENGINE ---
+        // --- AI ENGINE DENGAN CONTEKAN DATA ---
         async function tanyaGemini(text) {
             if(!API_KEY) throw new Error("API Key Kosong");
             const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
-            const sysPrompt = "Kamu adalah SiGenZ, AI Asisten Sekolah. Jawab singkat padat maksimal 2 kalimat.";
+            
+            // INI RAHASIANYA: KITA GABUNGKAN PENGETAHUAN SEKOLAH DENGAN PERTANYAAN USER
+            const sysPrompt = `Kamu adalah SiGenZ, AI Asisten Sekolah SMAN 1 Pejagoan.
+            
+            Gunakan DATA PENGETAHUAN ini untuk menjawab pertanyaan:
+            ${DATABASE_SEKOLAH}
+            
+            Instruksi:
+            1. Jika pertanyaan ada di data di atas, jawab sesuai data.
+            2. Jika tidak ada di data, jawablah secara umum dengan sopan.
+            3. Jawab singkat (maksimal 2 kalimat) karena akan dibacakan suara.
+            4. Gaya bahasa: Ramah, Membantu, Sedikit Gaul.`;
+
             const resp = await fetch(url, {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser: " + text }] }] })
+                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser bertanya: " + text }] }] })
             });
             const data = await resp.json();
             if(data.error) throw new Error(data.error.message);
@@ -245,7 +280,7 @@
             localStorage.setItem("my_ai_key", k);
             API_KEY = k;
             document.getElementById('modalSettings').classList.add('hidden');
-            location.reload(); // Refresh biar sistem jalan
+            location.reload(); 
         }
     </script>
 </body>
