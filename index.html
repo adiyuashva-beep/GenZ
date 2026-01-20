@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ TURBO (Groq Edition)</title>
+    <title>SiGenZ TURBO (Llama 3.3)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -13,12 +13,12 @@
     <style>
         body { background-color: #050505; color: #00ff88; font-family: 'Courier New', monospace; overflow: hidden; }
         
-        /* TEMA GROQ: HIJAU NEON (BIAR BEDA SAMA GOOGLE) */
+        /* TEMA GROQ: HIJAU NEON */
         .face-container { 
             width: 320px; height: 320px; 
             display: flex; flex-direction: column; 
             align-items: center; justify-content: center; 
-            gap: 50px; transition: 0.1s; /* Lebih responsif */
+            gap: 50px; transition: 0.1s; 
             filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.3)); 
         }
         .eyes-row { display: flex; gap: 70px; }
@@ -36,24 +36,24 @@
             opacity: 0.8; border-radius: 10px; 
         }
         
-        /* ANIMASI LEBIH AGRESIF */
+        /* ANIMASI */
         .state-idle .eye { animation: blink 3s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
         
         .state-thinking .eye { 
             background: #ff0055; box-shadow: 0 0 30px #ff0055; 
-            width: 90px; height: 5px; /* Mata menyipit mikir keras */
+            width: 90px; height: 5px; 
             animation: pulseFast 0.5s infinite;
         }
         @keyframes pulseFast { 0% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .state-speaking .eye { 
             background: #00ff88; box-shadow: 0 0 40px #00ff88; 
-            height: 50px; /* Mata melotot semangat */
+            height: 50px; 
         }
         .state-speaking .mouth { 
             background: #00ff88; 
-            animation: talk 0.1s infinite alternate; /* Ngomong super cepat */
+            animation: talk 0.1s infinite alternate; 
             opacity: 1; height: 5px; 
         }
         @keyframes talk { 
@@ -75,7 +75,7 @@
 
         <div class="absolute top-10 text-center z-10">
             <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">SiGenZ</h1>
-            <p class="text-xs text-green-600 tracking-widest mt-2">TURBO ENGINE (GROQ)</p>
+            <p class="text-xs text-green-600 tracking-widest mt-2">LLAMA 3.3 ENGINE</p>
         </div>
 
         <div id="robotFace" class="face-container state-idle z-20 mb-8">
@@ -84,7 +84,7 @@
         </div>
 
         <div id="response-container" class="z-20 min-h-[60px] flex items-center justify-center w-3/4 text-center mb-8">
-            <p id="response-text" class="text-xl font-medium text-green-100 drop-shadow-md">System Ready. Engine: Llama 3.</p>
+            <p id="response-text" class="text-xl font-medium text-green-100 drop-shadow-md">System Ready. Silakan Scan.</p>
         </div>
 
         <div class="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-green-500/30 backdrop-blur-sm z-20 hover:scale-105 transition duration-300">
@@ -117,26 +117,35 @@
             <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5"></i> TURBO CONFIG</h2>
             <p class="text-xs text-gray-400 mb-4">Masukkan API Key GROQ (gsk_...)</p>
             <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-green-500 outline-none" placeholder="gsk_...">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-green-700 to-emerald-700 w-full text-white py-3 rounded font-bold">AKTIFKAN TURBO</button>
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-green-700 to-emerald-700 w-full text-white py-3 rounded font-bold">SIMPAN KEY</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // DATABASE SEKOLAH (Edit Sesukamu)
+        // DATABASE SEKOLAH (JANGAN LUPA EDIT BAGIAN INI YA MAS ADI)
         const DATABASE_SEKOLAH = `
-        Nama: SiGenZ.
+        Nama AI: SiGenZ (Sistem Generasi Z).
         Lokasi: SMAN 1 Pejagoan.
         Creator: Mas Adi (Asmaul Riyadi).
-        Fungsi: Menjawab pertanyaan tentang sekolah dengan cepat dan gaul.
+        
+        DATA GURU:
+        - Kepala Sekolah: [ISI NAMA KEPSEK]
+        - Waka Kurikulum: [ISI NAMA]
+        - Satpam: Pak Y (Ramah & Tegas)
+        - Kantin: Jual Mendoan, Bakso, Seblak.
+
+        PERAN:
+        Kamu adalah Asisten Sekolah yang ramah, gaul, dan sangat membantu.
+        Jawab pertanyaan singkat saja (maksimal 2 kalimat).
         `;
 
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_groq_turbo_v10"; 
+        const KIOSK_ID = "sigenz_groq_llama33_v11"; // Channel Baru Biar Seger
         
-        let API_KEY = localStorage.getItem("my_groq_key") || ""; // Simpan beda nama biar gak tabrakan
+        let API_KEY = localStorage.getItem("my_groq_key") || ""; 
 
         let client;
         const urlParams = new URLSearchParams(window.location.search);
@@ -153,7 +162,7 @@
                 
                 initMqttKiosk();
                 generateQRCode();
-                document.body.addEventListener('click', () => { speak("Turbo Mode Aktif."); }, {once:true});
+                document.body.addEventListener('click', () => { speak("Sistem Aktif."); }, {once:true});
             }
         };
 
@@ -194,7 +203,6 @@
             setState('thinking');
 
             try {
-                // TANYA GROQ (BUKAN GOOGLE)
                 const aiReply = await tanyaGroq(msg);
                 
                 output.innerText = aiReply;
@@ -204,7 +212,7 @@
                 
             } catch (e) {
                 output.innerText = "Error: " + e.message;
-                speak("Error koneksi.");
+                speak("Ada gangguan.");
                 if(e.message.includes("401")) bukaSetting();
                 setState('idle');
             }
@@ -219,26 +227,26 @@
                 message.destinationName = KIOSK_ID;
                 client.send(message);
                 input.value = "";
-                document.getElementById('remote-feedback').innerText = "Dikirim ke Groq...";
+                document.getElementById('remote-feedback').innerText = "Terkirim: " + txt;
             } catch(e) { alert("Belum konek..."); }
         }
 
-        // --- GROQ ENGINE (SUPER FAST) ---
+        // --- GROQ ENGINE (LLAMA 3.3 - NEWEST) ---
         async function tanyaGroq(text) {
             if(!API_KEY) throw new Error("API Key Groq Kosong!");
             
             const url = "https://api.groq.com/openai/v1/chat/completions";
-            
             const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat maksimal 2 kalimat.`;
 
             const resp = await fetch(url, {
                 method: "POST", 
                 headers: { 
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${API_KEY}` // Header beda dikit sama Google
+                    "Authorization": `Bearer ${API_KEY}`
                 },
                 body: JSON.stringify({ 
-                    model: "llama3-8b-8192", // Model Super Cepat punya Meta
+                    // GANTI KE MODEL TERBARU
+                    model: "llama-3.3-70b-versatile", 
                     messages: [
                         { role: "system", content: sysPrompt },
                         { role: "user", content: text }
@@ -257,9 +265,9 @@
         
         function speak(text) {
             window.speechSynthesis.cancel();
-            const cleanText = text.replace(/[*#]/g, '');
+            const cleanText = text.replace(/[*#_`]/g, '');
             const u = new SpeechSynthesisUtterance(cleanText);
-            u.lang = 'id-ID'; u.rate = 1.1; // Agak dicepetin dikit biar imbangi Groq
+            u.lang = 'id-ID'; u.rate = 1.1; 
             u.onstart = () => setState('speaking');
             u.onend = () => setState('idle');
             window.speechSynthesis.speak(u);
@@ -275,7 +283,7 @@
         function saveSettings() {
             const k = document.getElementById('apiKeyInput').value.trim();
             if(!k) return alert("Isi API Key dulu!");
-            localStorage.setItem("my_groq_key", k); // Simpan beda slot
+            localStorage.setItem("my_groq_key", k);
             API_KEY = k;
             document.getElementById('modalSettings').classList.add('hidden');
             location.reload(); 
