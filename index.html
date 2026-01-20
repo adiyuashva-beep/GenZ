@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ AI Kiosk (Auto-Fix)</title>
+    <title>SiGenZ TURBO (Groq Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -11,35 +11,71 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        body { background-color: #020202; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; }
-        .face-container { width: 320px; height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 50px; transition: 0.3s; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3)); }
+        body { background-color: #050505; color: #00ff88; font-family: 'Courier New', monospace; overflow: hidden; }
+        
+        /* TEMA GROQ: HIJAU NEON (BIAR BEDA SAMA GOOGLE) */
+        .face-container { 
+            width: 320px; height: 320px; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            gap: 50px; transition: 0.1s; /* Lebih responsif */
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.3)); 
+        }
         .eyes-row { display: flex; gap: 70px; }
-        .eye { width: 90px; height: 25px; background: #0ff; box-shadow: 0 0 25px #0ff; border-radius: 4px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .mouth { width: 120px; height: 3px; background: #0ff; box-shadow: 0 0 15px #0ff; opacity: 0.6; border-radius: 10px; }
-        .state-idle .eye { animation: blink 4s infinite; }
+        .eye { 
+            width: 90px; height: 25px; 
+            background: #00ff88; 
+            box-shadow: 0 0 25px #00ff88; 
+            border-radius: 4px; 
+            transition: 0.1s; 
+        }
+        .mouth { 
+            width: 120px; height: 3px; 
+            background: #00ff88; 
+            box-shadow: 0 0 15px #00ff88; 
+            opacity: 0.8; border-radius: 10px; 
+        }
+        
+        /* ANIMASI LEBIH AGRESIF */
+        .state-idle .eye { animation: blink 3s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
-        .state-thinking .eye { background: #fbbf24; box-shadow: 0 0 30px #fbbf24; width: 40px; height: 40px; border-radius: 50%; animation: spin 1s infinite linear; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .state-speaking .eye { background: #4ade80; box-shadow: 0 0 30px #4ade80; height: 40px; width: 100px; }
-        .state-speaking .mouth { background: #4ade80; animation: talk 0.15s infinite alternate; opacity: 1; height: 5px; }
-        @keyframes talk { 0% { width: 120px; transform: scaleY(1); } 100% { width: 80px; transform: scaleY(3); border-radius: 50%; } }
-        .glass-panel { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0,255,255,0.2); backdrop-filter: blur(10px); }
+        
+        .state-thinking .eye { 
+            background: #ff0055; box-shadow: 0 0 30px #ff0055; 
+            width: 90px; height: 5px; /* Mata menyipit mikir keras */
+            animation: pulseFast 0.5s infinite;
+        }
+        @keyframes pulseFast { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .state-speaking .eye { 
+            background: #00ff88; box-shadow: 0 0 40px #00ff88; 
+            height: 50px; /* Mata melotot semangat */
+        }
+        .state-speaking .mouth { 
+            background: #00ff88; 
+            animation: talk 0.1s infinite alternate; /* Ngomong super cepat */
+            opacity: 1; height: 5px; 
+        }
+        @keyframes talk { 
+            0% { width: 120px; transform: scaleY(1); } 
+            100% { width: 60px; transform: scaleY(4); border-radius: 50%; } 
+        }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0,255,136,0.2); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="h-screen w-screen relative">
 
-    <div id="debug-info" class="absolute top-2 left-2 text-[10px] text-gray-600 z-50 font-mono bg-black/50 p-1 rounded">System Init...</div>
-
     <div id="kiosk-mode" class="hidden flex-col items-center justify-center w-full h-full relative">
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
 
-        <button onclick="bukaSetting()" class="absolute top-5 right-5 z-50 text-gray-700 hover:text-cyan-400 opacity-50 hover:opacity-100 transition">
+        <button onclick="bukaSetting()" class="absolute top-5 right-5 z-50 text-gray-700 hover:text-green-400 opacity-50 hover:opacity-100 transition">
             <i data-lucide="settings" class="w-6 h-6"></i>
         </button>
 
         <div class="absolute top-10 text-center z-10">
-            <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">SiGenZ</h1>
-            <p class="text-xs text-cyan-600 tracking-widest mt-2">SMAN 1 PEJAGOAN AI SYSTEM</p>
+            <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">SiGenZ</h1>
+            <p class="text-xs text-green-600 tracking-widest mt-2">TURBO ENGINE (GROQ)</p>
         </div>
 
         <div id="robotFace" class="face-container state-idle z-20 mb-8">
@@ -48,163 +84,63 @@
         </div>
 
         <div id="response-container" class="z-20 min-h-[60px] flex items-center justify-center w-3/4 text-center mb-8">
-            <p id="response-text" class="text-xl font-medium text-cyan-100 drop-shadow-md">Menunggu API Key...</p>
+            <p id="response-text" class="text-xl font-medium text-green-100 drop-shadow-md">System Ready. Engine: Llama 3.</p>
         </div>
 
-        <div class="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-cyan-500/30 backdrop-blur-sm z-20 hover:scale-105 transition duration-300">
+        <div class="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-green-500/30 backdrop-blur-sm z-20 hover:scale-105 transition duration-300">
             <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
-            <p class="text-[10px] text-cyan-400 animate-pulse font-bold tracking-widest">SCAN ME</p>
+            <p class="text-[10px] text-green-400 animate-pulse font-bold tracking-widest">SCAN ME</p>
         </div>
         
         <div id="connection-status" class="absolute bottom-2 left-4 text-[10px] text-gray-600">Connecting...</div>
     </div>
 
-    <div id="remote-mode" class="hidden flex-col w-full h-full bg-[#0a0a0a] items-center justify-center p-6 relative">
-        <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
+    <div id="remote-mode" class="hidden flex-col w-full h-full bg-[#050505] items-center justify-center p-6 relative">
+        <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600"></div>
         <div class="w-full max-w-md flex flex-col gap-6 z-10">
             <div class="text-center space-y-2">
                 <h2 class="text-2xl font-bold text-white">Remote Control</h2>
                 <p id="remote-status" class="text-xs text-yellow-500 animate-pulse">Menghubungkan...</p>
             </div>
             <div class="glass-panel p-4 rounded-xl min-h-[120px] flex flex-col items-center justify-center text-center">
-                <p id="remote-feedback" class="text-sm text-gray-400 italic">Silakan ketik pertanyaan...</p>
+                <p id="remote-feedback" class="text-sm text-gray-400 italic">Ketik pertanyaan...</p>
             </div>
             <div class="flex gap-2">
-                <input type="text" id="msgInput" placeholder="Tanya sesuatu..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-cyan-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
-                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-xl text-white font-bold shadow-lg"><i data-lucide="send" class="w-6 h-6"></i></button>
+                <input type="text" id="msgInput" placeholder="Tanya..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-green-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
+                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-green-600 to-emerald-700 p-4 rounded-xl text-white font-bold shadow-lg"><i data-lucide="send" class="w-6 h-6"></i></button>
             </div>
         </div>
     </div>
 
     <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-        <div class="bg-[#111] border border-cyan-800 p-6 rounded-2xl w-full max-w-sm shadow-[0_0_50px_rgba(0,255,255,0.2)]">
-            <h2 class="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> SYSTEM CONFIG</h2>
-            <p class="text-xs text-gray-400 mb-4">Masukkan API Key Google Gemini.</p>
-            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-cyan-500 outline-none" placeholder="AIzaSy...">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-cyan-700 to-blue-700 w-full text-white py-3 rounded font-bold">SIMPAN & CARI MODEL</button>
+        <div class="bg-[#111] border border-green-800 p-6 rounded-2xl w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5"></i> TURBO CONFIG</h2>
+            <p class="text-xs text-gray-400 mb-4">Masukkan API Key GROQ (gsk_...)</p>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-green-500 outline-none" placeholder="gsk_...">
+            <button onclick="saveSettings()" class="bg-gradient-to-r from-green-700 to-emerald-700 w-full text-white py-3 rounded font-bold">AKTIFKAN TURBO</button>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // DATA SEKOLAH (Edit sesuai kebutuhan)
+        // DATABASE SEKOLAH (Edit Sesukamu)
         const DATABASE_SEKOLAH = `
-        Nama: SiGenZ (Sistem Generasi Z).
-        Lokasi: SMAN 1 Pejagoan, Kebumen.
-        Pencipta: Mas Adi (Asmaul Riyadi).
-        Fungsi: Asisten Informasi Sekolah.
-        Identitas:
-        - Nama: SiGenZ (Sistem Generasi Z).
-        - Lokasi: SMAN 1 Pejagoan, Kebumen.
-        - Pencipta: Mas Adi (Asmaul Riyadi) - Staff TU Visioner.
-        
-        Informasi Sekolah:
-        - Kepala Sekolah: Erna Ummu Nurlaela
-        - Jam Kerja: 07.00 - 16.00 WIB.
-        - Fasilitas: Masjid, Lab, Perpus, Kantin, Parkir .
-        - ada 1065 siswa guru dan kayyawan sekitar 72 
-        - nama nama guru dan karyawan
-          Erna Umu Nurlaela, S.Pd, M.Eng
-Muji Rahayu, S.Pd.
-Ida Astuti, S.Pd.
-Drs. Sutriyanto.
-Dra. Indah Rahmawati.
-Drs. Doso Sucipto.
-Sri Raharjo, S.Pd.
-Gularso, S.Pd, M.Pd.
-Wiwi Sugiarti, S.Pd.
-Dra. Rini Widyaningsih.
-Drs. Rokhmat Supriyadi.
-Siti Rochamah, S.Pd.
-Titi Nurhadiyatun, S.Pd.
-Bayu Damar Nusantara, S.Pd
-Afri Lismaya Sinta Maheswari, S.Pd
-Endah Tri Rachmani, S.Sos.
-Mustikasari, S.Pd.
-Asih Parwiyatni, S.Pd.
-Wahyono, S.Pd
-Irfangi, S.Pd.
-Elin Marlina, S.Pd.
-Herdana Dwi Gahara, S. Pd. 
-Khusnul Khotimah, S.Pd, M.Si
-Rini Rachmawati, SE
-Sri Sunarsih, S.Pd.
-Nurul Azizah , S.Pd
-Heny Puryanto, S.Sos.
-Teguh Widodo
-Adi Hartono
-Agus Aji Suprihantoro
-Susiyanti
-Nur Wakhidin, S.M.
-Kabul Haryadi
-Tusiran
-Dra. Hj. Siti Muslikhatun.
-Sulastri, S.Pd.,M.M
-Slamet Edhi Sudrajat, S.Sn.
-Sulfan Hadi Mutakin, S.Pd.
-Nurhidayah Susilowati, S.Pd.
-Ngadnan, S.Pd
-Heri Pamuji, S.Pd
-Winda Agus Setyarini, S.Pd.
-Dina Dyah Agustina, S.Pd.
-Agung Kurniawan, S.TP.
-Muhammad Topix Hidayat, S.Tr.Kom
-Puas Romadloni, S.Pd
-Fitri Nugroho Suryadi, S.Pd
-Nur Ika Aristin, S.Pd.
-Erna Setyowati, S.Pd
-Iwan Syarifudin, S.Pd.
-Bangkit Nazhar, S.Pd.
-Tri Fatmawati, S.Pd.I.,M.Pd.I
-Betri Ngestiana, S.Pd.
-Nurul Sulistiyo Pribadi, S.Pd.
-Priyanto, S.Pd.Si
-Bodro Danang Ismanto,S.Pd.Gr.
-Siti Zulaikhah, S.Pd
-Fitri Rahmaliyah, S.Pd.
-Agus Salim Purwanto, S.Si, M.Pd
-Sunariyah, S.Pd.
-Dewi Santianingsih, S.Pd.
-Asmaul Riyadi, S.Kom.
-Khabib Marzuki, SE.
-Anjar Susilo, SE.
-Achmad Arif Mustaqim, S.I.Pust.
-Dewi Solikhati
-Pujo Riyadi
-Yasir Abdulah.
-Choderi
-Supriyadi
-Fitrianto Setiya Widodo
-Suhendri
-Akhmad Mulkan Fauzi, S.Pd
-
-Ade Gautama
-Wijang Pulung Baskoro Aji, S.Pd.
-Novi Yuniati, S.Pd.
-Suyanto, S.S.Pd
-Nanang Jatmiko, S.Pd
-Zakari Ulinuha, S.Sos.I, M.Pd
-Uli Fauziah Miatin, S.Pd, M.Pd
-Ita Riyatiningsih, S.Pd
-Uli Fauziah Miatin, S.Pd, M.Pd
-Feby Wahyu Harumi, S.Pd
-Khumaedi Masduqi, S.Pd.I
-Syifa Nurmala S.Pd
-Erwanda Dharmawan, S.Pd.
+        Nama: SiGenZ.
+        Lokasi: SMAN 1 Pejagoan.
+        Creator: Mas Adi (Asmaul Riyadi).
+        Fungsi: Menjawab pertanyaan tentang sekolah dengan cepat dan gaul.
         `;
 
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_sman1pejagoan_autofix_v9"; 
+        const KIOSK_ID = "sigenz_groq_turbo_v10"; 
         
-        let API_KEY = localStorage.getItem("my_ai_key") || "";
-        let ACTIVE_MODEL = ""; // AKAN DIISI OTOMATIS OLEH SCRIPT
+        let API_KEY = localStorage.getItem("my_groq_key") || ""; // Simpan beda nama biar gak tabrakan
 
         let client;
         const urlParams = new URLSearchParams(window.location.search);
         const isRemote = urlParams.get('role') === 'remote';
-        const debugLabel = document.getElementById('debug-info');
 
         window.onload = function() {
             if (isRemote) {
@@ -212,72 +148,27 @@ Erwanda Dharmawan, S.Pd.
                 initMqttRemote();
             } else {
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                if(!API_KEY) {
-                    bukaSetting();
-                } else {
-                    document.getElementById('apiKeyInput').value = API_KEY;
-                    initMqttKiosk();
-                    generateQRCode();
-                    cariModelDanKonek(); // INI FUNGSI AJAIBNYA
-                    document.body.addEventListener('click', () => { speak("Siap."); }, {once:true});
-                }
+                if(!API_KEY) bukaSetting();
+                else document.getElementById('apiKeyInput').value = API_KEY;
+                
+                initMqttKiosk();
+                generateQRCode();
+                document.body.addEventListener('click', () => { speak("Turbo Mode Aktif."); }, {once:true});
             }
         };
 
-        // --- FUNGSI PENCARI MODEL OTOMATIS (ANTI ERROR) ---
-        async function cariModelDanKonek() {
-            debugLabel.innerText = "Mencari Model AI...";
-            const output = document.getElementById('response-text');
-            
-            if(!API_KEY) { debugLabel.innerText = "API Key Missing"; return; }
-
-            try {
-                // 1. Tanya Google: Kamu punya model apa aja?
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
-                const data = await resp.json();
-
-                if(data.error) {
-                    debugLabel.innerText = "Auth Error";
-                    output.innerText = "Error API Key: " + data.error.message;
-                    bukaSetting();
-                    return;
-                }
-
-                // 2. Filter model yang bisa generate text
-                const validModels = data.models?.filter(m => m.supportedGenerationMethods.includes("generateContent"));
-
-                if(validModels && validModels.length > 0) {
-                    // 3. PRIORITAS: Cari yang ada kata "flash" (Biar cepat)
-                    let bestModel = validModels.find(m => m.name.includes("flash"));
-                    
-                    // Kalau gak ada flash, ambil YANG PERTAMA aja (Terserah namanya apa)
-                    if (!bestModel) bestModel = validModels[0];
-
-                    ACTIVE_MODEL = bestModel.name; // Simpan nama model (misal: models/gemini-1.5-flash-001)
-                    
-                    // Update Status di Layar
-                    debugLabel.innerText = "Connected: " + ACTIVE_MODEL;
-                    debugLabel.classList.add("text-green-500");
-                    output.innerText = "System Online. Otak: " + ACTIVE_MODEL.replace("models/", "");
-                    
-                } else {
-                    debugLabel.innerText = "No Models Found";
-                    output.innerText = "Akun Google ini tidak punya akses ke model AI apapun.";
-                }
-
-            } catch(e) {
-                debugLabel.innerText = "Net Error";
-                output.innerText = "Gagal menghubungi Google. Cek Internet.";
-            }
-        }
-
         // --- MQTT LOGIC ---
         function initMqttKiosk() {
+            const statusDiv = document.getElementById('connection-status');
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + Math.random().toString(16).substr(2, 8));
             client.onMessageArrived = onMessageKiosk;
             client.connect({ 
                 useSSL: true, 
-                onSuccess: () => { client.subscribe(KIOSK_ID); }
+                onSuccess: () => {
+                    statusDiv.innerText = "🟢 ONLINE (GROQ)";
+                    statusDiv.classList.add('text-green-500');
+                    client.subscribe(KIOSK_ID);
+                }
             });
         }
 
@@ -302,22 +193,19 @@ Erwanda Dharmawan, S.Pd.
             output.classList.add('italic', 'text-yellow-300');
             setState('thinking');
 
-            if(!ACTIVE_MODEL) {
-                output.innerText = "Error: Model AI belum siap.";
-                speak("Tunggu sebentar, sedang mencari jaringan.");
-                await cariModelDanKonek(); // Coba cari lagi
-                return;
-            }
-
             try {
-                const aiReply = await tanyaGemini(msg);
+                // TANYA GROQ (BUKAN GOOGLE)
+                const aiReply = await tanyaGroq(msg);
+                
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
-                output.classList.add('text-cyan-100');
+                output.classList.add('text-green-100');
                 speak(aiReply);
+                
             } catch (e) {
                 output.innerText = "Error: " + e.message;
-                speak("Maaf, error lagi.");
+                speak("Error koneksi.");
+                if(e.message.includes("401")) bukaSetting();
                 setState('idle');
             }
         }
@@ -331,41 +219,47 @@ Erwanda Dharmawan, S.Pd.
                 message.destinationName = KIOSK_ID;
                 client.send(message);
                 input.value = "";
-                document.getElementById('remote-feedback').innerText = "Terkirim: " + txt;
+                document.getElementById('remote-feedback').innerText = "Dikirim ke Groq...";
             } catch(e) { alert("Belum konek..."); }
         }
 
-        // --- AI ENGINE (DYNAMIC MODEL) ---
-        async function tanyaGemini(text) {
-            // URL DIBUAT DINAMIS SESUAI MODEL YANG DITEMUKAN
-            // ACTIVE_MODEL sudah berisi "models/nama-model", jadi URLnya pas
-            const url = `https://generativelanguage.googleapis.com/v1beta/${ACTIVE_MODEL}:generateContent?key=${API_KEY}`;
+        // --- GROQ ENGINE (SUPER FAST) ---
+        async function tanyaGroq(text) {
+            if(!API_KEY) throw new Error("API Key Groq Kosong!");
             
-            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat.`;
+            const url = "https://api.groq.com/openai/v1/chat/completions";
+            
+            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat maksimal 2 kalimat.`;
 
             const resp = await fetch(url, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: sysPrompt + "\n\nUser: " + text }] }] })
+                method: "POST", 
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${API_KEY}` // Header beda dikit sama Google
+                },
+                body: JSON.stringify({ 
+                    model: "llama3-8b-8192", // Model Super Cepat punya Meta
+                    messages: [
+                        { role: "system", content: sysPrompt },
+                        { role: "user", content: text }
+                    ]
+                })
             });
 
             const data = await resp.json();
             
-            if(data.error) {
-                // Kalau kena Rate Limit (429), kasih tau user suruh nunggu
-                if(data.error.code === 429) return "Kuota habis. Tunggu 1 menit ya.";
-                throw new Error(data.error.message); 
-            }
-            
-            return data.candidates[0].content.parts[0].text;
+            if(data.error) throw new Error(data.error.message);
+            return data.choices[0].message.content;
         }
 
+        // --- UTILS ---
         function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
         
         function speak(text) {
             window.speechSynthesis.cancel();
             const cleanText = text.replace(/[*#]/g, '');
             const u = new SpeechSynthesisUtterance(cleanText);
-            u.lang = 'id-ID'; u.rate = 1.0; 
+            u.lang = 'id-ID'; u.rate = 1.1; // Agak dicepetin dikit biar imbangi Groq
             u.onstart = () => setState('speaking');
             u.onend = () => setState('idle');
             window.speechSynthesis.speak(u);
@@ -381,10 +275,10 @@ Erwanda Dharmawan, S.Pd.
         function saveSettings() {
             const k = document.getElementById('apiKeyInput').value.trim();
             if(!k) return alert("Isi API Key dulu!");
-            localStorage.setItem("my_ai_key", k);
+            localStorage.setItem("my_groq_key", k); // Simpan beda slot
             API_KEY = k;
             document.getElementById('modalSettings').classList.add('hidden');
-            cariModelDanKonek(); // Cari ulang pas disave
+            location.reload(); 
         }
     </script>
 </body>
