@@ -3,79 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiGenZ TURBO (Llama 3.3)</title>
+    <title>SiGenZ Admin System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
         body { background-color: #050505; color: #00ff88; font-family: 'Courier New', monospace; overflow: hidden; }
         
-        /* TEMA GROQ: HIJAU NEON */
-        .face-container { 
-            width: 320px; height: 320px; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            gap: 50px; transition: 0.1s; 
-            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.3)); 
-        }
+        /* ROBOT FACE & ANIMATIONS */
+        .face-container { width: 320px; height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 50px; filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.3)); transition: 0.3s; }
         .eyes-row { display: flex; gap: 70px; }
-        .eye { 
-            width: 90px; height: 25px; 
-            background: #00ff88; 
-            box-shadow: 0 0 25px #00ff88; 
-            border-radius: 4px; 
-            transition: 0.1s; 
-        }
-        .mouth { 
-            width: 120px; height: 3px; 
-            background: #00ff88; 
-            box-shadow: 0 0 15px #00ff88; 
-            opacity: 0.8; border-radius: 10px; 
-        }
+        .eye { width: 90px; height: 25px; background: #00ff88; box-shadow: 0 0 25px #00ff88; border-radius: 4px; transition: 0.1s; }
+        .mouth { width: 120px; height: 3px; background: #00ff88; box-shadow: 0 0 15px #00ff88; opacity: 0.8; border-radius: 10px; }
         
-        /* ANIMASI */
         .state-idle .eye { animation: blink 3s infinite; }
         @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
-        
-        .state-thinking .eye { 
-            background: #ff0055; box-shadow: 0 0 30px #ff0055; 
-            width: 90px; height: 5px; 
-            animation: pulseFast 0.5s infinite;
-        }
-        @keyframes pulseFast { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        .state-speaking .eye { background: #00ff88; box-shadow: 0 0 40px #00ff88; height: 50px; }
+        .state-speaking .mouth { animation: talk 0.1s infinite alternate; height: 5px; }
+        @keyframes talk { 0% { width: 120px; transform: scaleY(1); } 100% { width: 60px; transform: scaleY(4); border-radius: 50%; } }
 
-        .state-speaking .eye { 
-            background: #00ff88; box-shadow: 0 0 40px #00ff88; 
-            height: 50px; 
-        }
-        .state-speaking .mouth { 
-            background: #00ff88; 
-            animation: talk 0.1s infinite alternate; 
-            opacity: 1; height: 5px; 
-        }
-        @keyframes talk { 
-            0% { width: 120px; transform: scaleY(1); } 
-            100% { width: 60px; transform: scaleY(4); border-radius: 50%; } 
-        }
+        .glass-panel { background: rgba(0, 20, 10, 0.8); border: 1px solid rgba(0,255,136,0.2); backdrop-filter: blur(10px); }
         
-        .glass-panel { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0,255,136,0.2); backdrop-filter: blur(10px); }
+        /* ADMIN PANEL STYLE */
+        .admin-input { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 100%; border-radius: 5px; font-size: 12px; font-family: sans-serif; }
+        .admin-input:focus { border-color: #00ff88; outline: none; }
+        .admin-label { font-size: 10px; color: #888; margin-top: 10px; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body class="h-screen w-screen relative">
 
     <div id="kiosk-mode" class="hidden flex-col items-center justify-center w-full h-full relative">
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
 
-        <button onclick="bukaSetting()" class="absolute top-5 right-5 z-50 text-gray-700 hover:text-green-400 opacity-50 hover:opacity-100 transition">
-            <i data-lucide="settings" class="w-6 h-6"></i>
+        <button onclick="bukaAdminPanel()" class="absolute bottom-5 left-5 z-50 text-gray-800 hover:text-green-500 transition opacity-30 hover:opacity-100">
+            <i data-lucide="lock" class="w-6 h-6"></i>
+        </button>
+
+        <button onclick="toggleQR()" class="absolute top-5 right-5 z-50 text-green-800 hover:text-green-400">
+            <i data-lucide="qr-code" class="w-6 h-6"></i>
         </button>
 
         <div class="absolute top-10 text-center z-10">
-            <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">SiGenZ</h1>
-            <p class="text-xs text-green-600 tracking-widest mt-2">LLAMA 3.3 ENGINE</p>
+            <h1 class="text-4xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">SiGenZ</h1>
+            <p class="text-[10px] text-green-700 tracking-widest mt-2">SMAN 1 PEJAGOAN INTELLIGENCE</p>
         </div>
 
         <div id="robotFace" class="face-container state-idle z-20 mb-8">
@@ -84,114 +56,204 @@
         </div>
 
         <div id="response-container" class="z-20 min-h-[60px] flex items-center justify-center w-3/4 text-center mb-8">
-            <p id="response-text" class="text-xl font-medium text-green-100 drop-shadow-md">System Ready. Silakan Scan.</p>
+            <p id="response-text" class="text-xl font-medium text-green-100 drop-shadow-md">System Ready.</p>
         </div>
 
-        <div class="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-green-500/30 backdrop-blur-sm z-20 hover:scale-105 transition duration-300">
+        <div id="qr-container" class="hidden flex-col items-center gap-3 bg-white/5 p-4 rounded-2xl border border-green-500/30 backdrop-blur-sm z-20">
             <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
             <p class="text-[10px] text-green-400 animate-pulse font-bold tracking-widest">SCAN ME</p>
         </div>
         
-        <div id="connection-status" class="absolute bottom-2 left-4 text-[10px] text-gray-600">Connecting...</div>
+        <div id="connection-status" class="absolute bottom-2 right-4 text-[10px] text-gray-700">Connecting...</div>
     </div>
 
-    <div id="remote-mode" class="hidden flex-col w-full h-full bg-[#050505] items-center justify-center p-6 relative">
-        <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600"></div>
-        <div class="w-full max-w-md flex flex-col gap-6 z-10">
-            <div class="text-center space-y-2">
-                <h2 class="text-2xl font-bold text-white">Silakan Tulis</h2>
-                <p id="remote-status" class="text-xs text-yellow-500 animate-pulse">Menghubungkan...</p>
+
+    <div id="admin-panel" class="hidden fixed inset-0 bg-black/95 z-[100] p-6 overflow-y-auto">
+        <div class="max-w-2xl mx-auto bg-[#0a0a0a] border border-green-900 rounded-xl p-8 shadow-[0_0_50px_rgba(0,255,136,0.1)]">
+            <div class="flex justify-between items-center mb-6 border-b border-green-900 pb-4">
+                <h2 class="text-2xl font-bold text-green-400 flex items-center gap-2">
+                    <i data-lucide="database" class="w-6 h-6"></i> ADMIN DASHBOARD
+                </h2>
+                <button onclick="tutupAdminPanel()" class="text-gray-500 hover:text-white">Tutup [X]</button>
             </div>
-            <div class="glass-panel p-4 rounded-xl min-h-[120px] flex flex-col items-center justify-center text-center">
-                <p id="remote-feedback" class="text-sm text-gray-400 italic">Ketik pertanyaan...</p>
+
+            <div class="mb-6 bg-green-900/10 p-4 rounded-lg border border-green-900/30">
+                <h3 class="text-sm font-bold text-green-500 mb-2">🔑 PENGATURAN KUNCI (API KEY)</h3>
+                <label class="admin-label">GROQ API KEY (gsk_...)</label>
+                <input type="password" id="inputApiKey" class="admin-input text-yellow-500 font-mono" placeholder="Tempel API Key di sini...">
             </div>
-            <div class="flex gap-2">
-                <input type="text" id="msgInput" placeholder="Tanya..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-green-500 transition shadow-lg" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
-                <button onclick="kirimPesanDariHP()" class="bg-gradient-to-br from-green-600 to-emerald-700 p-4 rounded-xl text-white font-bold shadow-lg"><i data-lucide="send" class="w-6 h-6"></i></button>
+
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold text-green-500 mt-6 mb-2">🏫 DATA & PENGETAHUAN SEKOLAH</h3>
+                
+                <div>
+                    <label class="admin-label">IDENTITAS & VISI MISI</label>
+                    <textarea id="inputInfoUmum" rows="3" class="admin-input" placeholder="Contoh: SMAN 1 Pejagoan adalah sekolah unggulan..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="admin-label">DATA KEPALA SEKOLAH & WAKA</label>
+                        <textarea id="inputStruktural" rows="4" class="admin-input" placeholder="- KS: Bapak ...&#10;- Waka Kurikulum: ..."></textarea>
+                    </div>
+                    <div>
+                        <label class="admin-label">DATA JUMLAH (GURU/SISWA)</label>
+                        <textarea id="inputStatistik" rows="4" class="admin-input" placeholder="- Jml Siswa: 800&#10;- Jml Guru: 50"></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="admin-label">DAFTAR GURU & MAPEL (Penting buat siswa tanya)</label>
+                    <textarea id="inputGuru" rows="5" class="admin-input" placeholder="- Pak Budi (Matematika)&#10;- Bu Siti (Biologi)&#10;- Mas Adi (TU Ganteng)"></textarea>
+                </div>
+
+                <div>
+                    <label class="admin-label">FASILITAS & LAIN-LAIN</label>
+                    <textarea id="inputFasilitas" rows="3" class="admin-input" placeholder="Kantin, Lab Komputer, Masjid..."></textarea>
+                </div>
+            </div>
+
+            <div class="mt-8 flex gap-4">
+                <button onclick="simpanDataSekolah()" class="flex-1 bg-green-700 hover:bg-green-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                    <i data-lucide="save" class="inline w-4 h-4 mr-2"></i> SIMPAN & UPDATE OTAK
+                </button>
+                <button onclick="resetData()" class="bg-red-900/50 hover:bg-red-700 text-red-200 py-3 px-6 rounded-lg text-xs">
+                    Reset
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="modalSettings" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-        <div class="bg-[#111] border border-green-800 p-6 rounded-2xl w-full max-w-sm">
-            <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5"></i> TURBO CONFIG</h2>
-            <p class="text-xs text-gray-400 mb-4">Masukkan API Key GROQ (gsk_...)</p>
-            <input type="password" id="apiKeyInput" class="w-full bg-black border border-gray-800 text-white p-3 rounded mb-4 text-sm focus:border-green-500 outline-none" placeholder="gsk_...">
-            <button onclick="saveSettings()" class="bg-gradient-to-r from-green-700 to-emerald-700 w-full text-white py-3 rounded font-bold">SIMPAN KEY</button>
+
+    <div id="remote-mode" class="hidden flex-col w-full h-full bg-[#050505] items-center justify-center p-6 relative">
+        <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600"></div>
+        <div class="w-full max-w-md flex flex-col gap-6 z-10">
+            <h2 class="text-2xl font-bold text-white text-center">Remote Control</h2>
+            <div class="glass-panel p-4 rounded-xl min-h-[120px] flex flex-col items-center justify-center text-center">
+                <p id="remote-feedback" class="text-sm text-gray-400 italic">Ketik pertanyaan...</p>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="msgInput" placeholder="Tanya..." class="flex-1 bg-[#111] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-green-500" onkeypress="if(event.key === 'Enter') kirimPesanDariHP()">
+                <button onclick="kirimPesanDariHP()" class="bg-green-700 p-4 rounded-xl text-white font-bold"><i data-lucide="send"></i></button>
+            </div>
+            <p id="remote-status" class="text-center text-[10px] text-gray-500">Connecting...</p>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
         
-        // DATABASE SEKOLAH (JANGAN LUPA EDIT BAGIAN INI YA MAS ADI)
-        const DATABASE_SEKOLAH = `
-        Nama AI: SiGenZ (Sistem Generasi Z).
-        Lokasi: SMAN 1 Pejagoan.
-        Creator: Mas Adi (Asmaul Riyadi).
-        
-        DATA GURU:
-        - Kepala Sekolah: [ISI NAMA KEPSEK]
-        - Waka Kurikulum: [ISI NAMA]
-        - Satpam: Pak Y (Ramah & Tegas)
-        - Kantin: Jual Mendoan, Bakso, Seblak.
-
-        PERAN:
-        Kamu adalah Asisten Sekolah yang ramah, gaul, dan sangat membantu.
-        Jawab pertanyaan singkat saja (maksimal 2 kalimat).
-        `;
-
+        // --- KONFIGURASI ---
         const MQTT_BROKER = "broker.hivemq.com";
-        const MQTT_PORT = 8884; 
-        const KIOSK_ID = "sigenz_groq_llama33_v11"; // Channel Baru Biar Seger
-        
-        let API_KEY = localStorage.getItem("my_groq_key") || ""; 
+        const MQTT_PORT = 8884;
+        const KIOSK_ID = "sigenz_sman1pejagoan_admin_v12"; 
+
+        // VARIABEL DATA (Diisi dari LocalStorage)
+        let API_KEY = "";
+        let DB_UMUM = "";
+        let DB_STRUKTURAL = "";
+        let DB_STATISTIK = "";
+        let DB_GURU = "";
+        let DB_FASILITAS = "";
 
         let client;
         const urlParams = new URLSearchParams(window.location.search);
         const isRemote = urlParams.get('role') === 'remote';
 
+        // --- INIT SAAT LOAD ---
         window.onload = function() {
+            loadFromMemory(); // Tarik data dari memori laptop
+
             if (isRemote) {
                 document.getElementById('remote-mode').classList.remove('hidden');
                 initMqttRemote();
             } else {
                 document.getElementById('kiosk-mode').classList.remove('hidden');
-                if(!API_KEY) bukaSetting();
-                else document.getElementById('apiKeyInput').value = API_KEY;
-                
                 initMqttKiosk();
                 generateQRCode();
-                document.body.addEventListener('click', () => { speak("Sistem Aktif."); }, {once:true});
+                document.body.addEventListener('click', () => { speak("Sistem SiGenZ Online."); }, {once:true});
             }
         };
 
-        // --- MQTT LOGIC ---
+        // ================= FUNGSI ADMIN / DATABASE =================
+
+        function bukaAdminPanel() {
+            const pin = prompt("Masukkan PIN Admin:");
+            if(pin === "1234") { // PIN SEDERHANA
+                document.getElementById('admin-panel').classList.remove('hidden');
+                // Isi form dengan data yang ada
+                document.getElementById('inputApiKey').value = API_KEY;
+                document.getElementById('inputInfoUmum').value = DB_UMUM;
+                document.getElementById('inputStruktural').value = DB_STRUKTURAL;
+                document.getElementById('inputStatistik').value = DB_STATISTIK;
+                document.getElementById('inputGuru').value = DB_GURU;
+                document.getElementById('inputFasilitas').value = DB_FASILITAS;
+            } else {
+                alert("PIN Salah! Akses Ditolak.");
+            }
+        }
+
+        function tutupAdminPanel() {
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        function simpanDataSekolah() {
+            // Ambil data dari form input
+            const k = document.getElementById('inputApiKey').value.trim();
+            const u = document.getElementById('inputInfoUmum').value;
+            const s = document.getElementById('inputStruktural').value;
+            const st = document.getElementById('inputStatistik').value;
+            const g = document.getElementById('inputGuru').value;
+            const f = document.getElementById('inputFasilitas').value;
+
+            // Simpan ke LocalStorage Browser
+            localStorage.setItem("sigenz_key", k);
+            localStorage.setItem("sigenz_umum", u);
+            localStorage.setItem("sigenz_struktural", s);
+            localStorage.setItem("sigenz_statistik", st);
+            localStorage.setItem("sigenz_guru", g);
+            localStorage.setItem("sigenz_fasilitas", f);
+
+            alert("Data Berhasil Disimpan ke Otak AI! ✅");
+            location.reload(); // Refresh biar update
+        }
+
+        function loadFromMemory() {
+            API_KEY = localStorage.getItem("sigenz_key") || "";
+            DB_UMUM = localStorage.getItem("sigenz_umum") || "SMAN 1 Pejagoan adalah sekolah unggulan.";
+            DB_STRUKTURAL = localStorage.getItem("sigenz_struktural") || "Kepala Sekolah: [Belum Diisi]";
+            DB_STATISTIK = localStorage.getItem("sigenz_statistik") || "";
+            DB_GURU = localStorage.getItem("sigenz_guru") || "";
+            DB_FASILITAS = localStorage.getItem("sigenz_fasilitas") || "";
+        }
+
+        function resetData() {
+            if(confirm("Yakin hapus semua data?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function toggleQR() {
+            document.getElementById('qr-container').classList.toggle('hidden');
+        }
+
+        // ================= MQTT & AI LOGIC =================
+
         function initMqttKiosk() {
-            const statusDiv = document.getElementById('connection-status');
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "kiosk_" + Math.random().toString(16).substr(2, 8));
             client.onMessageArrived = onMessageKiosk;
-            client.connect({ 
-                useSSL: true, 
-                onSuccess: () => {
-                    statusDiv.innerText = "🟢 ONLINE (GROQ)";
-                    statusDiv.classList.add('text-green-500');
-                    client.subscribe(KIOSK_ID);
-                }
-            });
+            client.connect({ useSSL: true, onSuccess: () => { 
+                document.getElementById('connection-status').innerText = "🟢 SYSTEM ONLINE";
+                client.subscribe(KIOSK_ID); 
+            }});
         }
 
         function initMqttRemote() {
-            const statusDiv = document.getElementById('remote-status');
             client = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "remote_" + Math.random().toString(16).substr(2, 8));
-            client.connect({ 
-                useSSL: true, 
-                onSuccess: () => {
-                    statusDiv.innerText = "✅ TERHUBUNG";
-                    statusDiv.classList.replace('text-yellow-500', 'text-green-400');
-                    statusDiv.classList.remove('animate-pulse');
-                }
-            });
+            client.connect({ useSSL: true, onSuccess: () => { 
+                document.getElementById('remote-status').innerText = "✅ TERHUBUNG";
+            }});
         }
 
         async function onMessageKiosk(message) {
@@ -204,16 +266,14 @@
 
             try {
                 const aiReply = await tanyaGroq(msg);
-                
                 output.innerText = aiReply;
                 output.classList.remove('italic', 'text-yellow-300');
                 output.classList.add('text-green-100');
                 speak(aiReply);
-                
             } catch (e) {
                 output.innerText = "Error: " + e.message;
-                speak("Ada gangguan.");
-                if(e.message.includes("401")) bukaSetting();
+                speak("Maaf, ada kesalahan.");
+                if(e.message.includes("API Key")) bukaAdminPanel();
                 setState('idle');
             }
         }
@@ -227,25 +287,48 @@
                 message.destinationName = KIOSK_ID;
                 client.send(message);
                 input.value = "";
-                document.getElementById('remote-feedback').innerText = "Terkirim: " + txt;
-            } catch(e) { alert("Belum konek..."); }
+                document.getElementById('remote-feedback').innerText = "Terkirim...";
+            } catch(e) { alert("Tunggu koneksi..."); }
         }
 
-        // --- GROQ ENGINE (LLAMA 3.3 - NEWEST) ---
+        // --- OTAK AI DINAMIS (BACA DARI FORM ADMIN) ---
         async function tanyaGroq(text) {
-            if(!API_KEY) throw new Error("API Key Groq Kosong!");
+            if(!API_KEY) throw new Error("API Key belum diisi! Klik tombol Gembok.");
             
-            const url = "https://api.groq.com/openai/v1/chat/completions";
-            const sysPrompt = `Kamu adalah SiGenZ. Gunakan data ini: ${DATABASE_SEKOLAH}. Jawab singkat maksimal 2 kalimat.`;
+            // GABUNGKAN SEMUA DATA JADI SATU PROMPT BESAR
+            const CONTEXT_SEKOLAH = `
+            INFORMASI SEKOLAH:
+            ${DB_UMUM}
+            
+            STRUKTUR ORGANISASI:
+            ${DB_STRUKTURAL}
+            
+            DATA STATISTIK:
+            ${DB_STATISTIK}
+            
+            DAFTAR GURU & STAFF:
+            ${DB_GURU}
+            
+            FASILITAS:
+            ${DB_FASILITAS}
+            
+            PENCIPTA AI:
+            Mas Adi (Asmaul Riyadi) - Staff TU SMAN 1 Pejagoan.
+            `;
 
-            const resp = await fetch(url, {
+            const sysPrompt = `Kamu adalah SiGenZ, Asisten Cerdas SMAN 1 Pejagoan.
+            Gunakan data berikut untuk menjawab pertanyaan:
+            ${CONTEXT_SEKOLAH}
+            
+            Aturan Jawab:
+            1. Jawab singkat, padat, jelas (Maks 2-3 kalimat).
+            2. Gaya bahasa ramah, sopan, sedikit santai.
+            3. Jika data tidak ada di atas, jawab "Maaf, saya belum punya data itu."`;
+
+            const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST", 
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${API_KEY}`
-                },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${API_KEY}` },
                 body: JSON.stringify({ 
-                    // GANTI KE MODEL TERBARU
                     model: "llama-3.3-70b-versatile", 
                     messages: [
                         { role: "system", content: sysPrompt },
@@ -255,12 +338,10 @@
             });
 
             const data = await resp.json();
-            
             if(data.error) throw new Error(data.error.message);
             return data.choices[0].message.content;
         }
 
-        // --- UTILS ---
         function setState(state) { document.getElementById('robotFace').className = `face-container state-${state} z-20 mb-8`; }
         
         function speak(text) {
@@ -277,16 +358,6 @@
             const currentUrl = window.location.href.split('?')[0]; 
             const remoteUrl = `${currentUrl}?role=remote`;
             new QRCode(document.getElementById("qrcode"), { text: remoteUrl, width: 120, height: 120, colorDark : "#000000", colorLight : "#ffffff" });
-        }
-        
-        function bukaSetting() { document.getElementById('modalSettings').classList.remove('hidden'); }
-        function saveSettings() {
-            const k = document.getElementById('apiKeyInput').value.trim();
-            if(!k) return alert("Isi API Key dulu!");
-            localStorage.setItem("my_groq_key", k);
-            API_KEY = k;
-            document.getElementById('modalSettings').classList.add('hidden');
-            location.reload(); 
         }
     </script>
 </body>
